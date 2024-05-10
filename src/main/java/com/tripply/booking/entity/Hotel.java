@@ -1,15 +1,23 @@
 package com.tripply.booking.entity;
 
+import com.tripply.booking.model.request.AmentiesRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 import org.hibernate.type.SqlTypes;
 import org.json.simple.JSONObject;
+
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -37,6 +45,6 @@ public class Hotel extends BaseEntity {
     private String website;
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "amenities", columnDefinition = "jsonb")
-    private JSONObject amenities;
+    private List<AmentiesRequest> amenities;
 
 }
