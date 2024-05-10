@@ -10,6 +10,7 @@ import com.tripply.booking.model.request.InviteRequest;
 import com.tripply.booking.model.response.InviteResponse;
 import com.tripply.booking.service.HotelService;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -19,8 +20,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import static com.tripply.booking.constants.BookingConstant.DUMMY_TOKEN;
-import static com.tripply.booking.constants.BookingConstant.SEND_HOTEL_INVITE_URL;
+import static com.tripply.booking.constants.BookingConstant.*;
 
 @Service
 @Slf4j
@@ -34,6 +34,9 @@ public class HotelServiceImpl implements HotelService {
     @Override
     public ResponseModel<InviteResponse> createHotel(HotelRequest hotelRequest) {
         log.info("Start HotelService createHotel(): {}", hotelRequest.getName());
+        if(checkedAlreadyInvited(hotelRequest.getManagerDetails().getEmail())) {
+            throw new BadRequestException("Hotel manager already invited.");
+        }
         InviteRequest inviteRequest = createHotelInviteRequest(hotelRequest);
         ResponseModel<InviteResponse> response = sendHotelInvite(inviteRequest);
         log.info("End HotelService createHotel(): {}", hotelRequest.getName());
@@ -72,7 +75,19 @@ public class HotelServiceImpl implements HotelService {
             log.error("Network error while sending therapist invite", e);
             throw new ServiceCommunicationException("Network error occurred while calling to notification service");
         }
+    }
 
+    private boolean checkedAlreadyInvited(String sentToEmail) {
+        log.info("Begin checkedAlreadyInvitee() for the sentToEmail: {} ", sentToEmail);
+        try {
+            webClientService.getWithParameterizedTypeReference(notificationBaseUrl + CHECK_ALREADY_INVITED + sentToEmail,
+                    new ParameterizedTypeReference<>() {
+                    }, DUMMY_TOKEN);
+            return true;
+        } catch (Exception e) {
+            log.error("Catching error for emailID: {}", sentToEmail, e);
+            return false;
+        }
     }
 
 }
