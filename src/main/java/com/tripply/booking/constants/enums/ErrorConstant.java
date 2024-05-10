@@ -1,10 +1,10 @@
-package com.tripply.booking.constants;
+package com.tripply.booking.constants.enums;
 
 public enum ErrorConstant {
 
     ER001("0", "ER001", "Record not found in tripply system"),
     ER002("1", "ER002", "We're sorry, but the service you're trying to access is temporarily unavailable. Please try again later."),
-    ER003("2", "ER003", "We're sorry, but the service will not be able to serve this request.");
+    ER003("2", "ER003", "We apologize for the inconvenience, but due to an internal error, our service is currently unable to process your request.");
 
     private final String key;
     private final String errorCode;

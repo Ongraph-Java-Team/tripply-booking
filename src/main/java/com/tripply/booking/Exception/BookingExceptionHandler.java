@@ -1,7 +1,8 @@
 package com.tripply.booking.Exception;
 
-import com.tripply.booking.constants.ErrorConstant;
+import com.tripply.booking.constants.enums.ErrorConstant;
 import com.tripply.booking.model.ErrorDetails;
+import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.response.ApiErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,10 +18,11 @@ import java.util.List;
 public class BookingExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiErrorResponse> handleBadRequestException(BadRequestException ex) {
+    public ResponseEntity<ResponseModel<String>> handleBadRequestException(BadRequestException ex) {
         log.error("BadRequestException handled with message: ", ex);
-        ApiErrorResponse errorResponse = new ApiErrorResponse();
+        ResponseModel<String> errorResponse = new ResponseModel<>();
         errorResponse.setStatus(HttpStatus.BAD_REQUEST);
+        errorResponse.setTimestamp(LocalDateTime.now());
         errorResponse.setErrors(List.of(ErrorDetails.builder()
                 .errorCode(ErrorConstant.ER003.getErrorCode())
                 .errorDesc(ex.getMessage())
@@ -30,10 +32,11 @@ public class BookingExceptionHandler {
     }
 
     @ExceptionHandler(DataNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleDataNotFoundException(DataNotFoundException ex) {
+    public ResponseEntity<ResponseModel<String>> handleDataNotFoundException(DataNotFoundException ex) {
         log.error("DataNotFoundException handled with message: ", ex);
-        ApiErrorResponse errorResponse = new ApiErrorResponse();
+        ResponseModel<String> errorResponse = new ResponseModel<>();
         errorResponse.setStatus(HttpStatus.NOT_FOUND);
+        errorResponse.setTimestamp(LocalDateTime.now());
         errorResponse.setErrors(List.of(ErrorDetails.builder()
                 .errorCode(ErrorConstant.ER001.getErrorCode())
                 .errorDesc(ex.getMessage())
@@ -43,10 +46,11 @@ public class BookingExceptionHandler {
     }
 
     @ExceptionHandler(ServiceCommunicationException.class)
-    public ResponseEntity<ApiErrorResponse> handleServiceCommunicationException(ServiceCommunicationException ex) {
+    public ResponseEntity<ResponseModel<String>> handleServiceCommunicationException(ServiceCommunicationException ex) {
         log.error("ServiceCommunicationException handled with message: ", ex);
-        ApiErrorResponse errorResponse = new ApiErrorResponse();
+        ResponseModel<String> errorResponse = new ResponseModel<>();
         errorResponse.setStatus(HttpStatus.NOT_FOUND);
+        errorResponse.setTimestamp(LocalDateTime.now());
         errorResponse.setErrors(List.of(ErrorDetails.builder()
                 .errorCode(ErrorConstant.ER002.getErrorCode())
                 .errorDesc(ErrorConstant.ER002.getErrorDescription())
@@ -56,10 +60,11 @@ public class BookingExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleServiceCommunicationException(Exception ex) {
+    public ResponseEntity<ResponseModel<String>> handleServiceCommunicationException(Exception ex) {
         log.error("ServiceCommunicationException handled with message: ", ex);
-        ApiErrorResponse errorResponse = new ApiErrorResponse();
+        ResponseModel<String> errorResponse = new ResponseModel<>();
         errorResponse.setStatus(HttpStatus.NOT_FOUND);
+        errorResponse.setTimestamp(LocalDateTime.now());
         errorResponse.setErrors(List.of(ErrorDetails.builder()
                 .errorCode(ErrorConstant.ER003.getErrorCode())
                 .errorDesc(ErrorConstant.ER003.getErrorDescription())
