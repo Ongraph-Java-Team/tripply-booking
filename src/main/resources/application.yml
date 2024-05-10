@@ -1,0 +1,18 @@
+# Database configuration for PostgresSQL
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/Booking_Service
+    username: postgres
+    password: root
+
+  # Hibernate properties
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+app:
+  base-url: http://localhost:8080
+  notification:
+    base-url: http://localhost:8087
+  auth:
+    base-url: http://localhost:8085
