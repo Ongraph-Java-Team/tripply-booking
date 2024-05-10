@@ -1,4 +1,4 @@
-package com.tripply.booking.service;
+package com.tripply.booking.serviceimpl;
 
 import com.tripply.booking.dto.HotelDTO;
 

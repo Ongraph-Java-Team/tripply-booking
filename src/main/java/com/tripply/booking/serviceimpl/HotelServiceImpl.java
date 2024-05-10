@@ -1,8 +1,7 @@
-package com.tripply.booking.service;
+package com.tripply.booking.serviceimpl;
 
 import com.tripply.booking.dto.HotelDTO;
 import com.tripply.booking.repository.HotelRepository;
-import com.tripply.booking.service.HotelService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

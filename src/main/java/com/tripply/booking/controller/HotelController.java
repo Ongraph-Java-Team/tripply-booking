@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.tripply.booking.dto.HotelDTO;
-import com.tripply.booking.service.HotelService;
+import com.tripply.booking.serviceimpl.HotelService;
 
 import java.util.List;
 import java.util.Optional;
