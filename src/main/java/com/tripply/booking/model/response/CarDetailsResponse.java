@@ -1,6 +1,6 @@
 package com.tripply.booking.model.response;
 
-import com.tripply.booking.dto.CarDetails;
+import com.tripply.booking.entity.CarDetails;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

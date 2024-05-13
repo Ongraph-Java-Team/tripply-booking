@@ -5,6 +5,7 @@ import com.tripply.booking.model.request.CarRequest;
 import com.tripply.booking.model.response.CarDetailsResponse;
 import com.tripply.booking.model.response.CarResponse;
 import com.tripply.booking.service.CarService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +18,7 @@ public class CarController {
     CarService carService;
 
     @PostMapping("/cars")
-    public ResponseModel<CarResponse> saveCarForRent(@RequestBody CarRequest carRequest){
+    public ResponseModel<CarResponse> addCarForRent(@Valid @RequestBody CarRequest carRequest){
         log.info("Endpoint: /cars triggered with new Car: {}", carRequest.getModel());
         ResponseModel<CarResponse> carResponse = carService.saveCarForRent(carRequest);
         log.info("Endpoint: /cars triggered with new Car: {}", carRequest.getModel());

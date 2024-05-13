@@ -1,6 +1,8 @@
-package com.tripply.booking.dto;
+package com.tripply.booking.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import java.sql.Timestamp;
 
@@ -13,8 +15,7 @@ public class CarDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long carId;
 
-//    @Size(max = 12, message = "Registration number must be at most 12 characters.")
-    @Column(length = 12, unique = true)
+    @Column(length = 12, nullable=false, unique = true)
     private String registrationNo;
 
     @Column(name = "car_model")
@@ -40,4 +41,15 @@ public class CarDetails {
 
     @Column(name = "last_updated_on")
     private Timestamp updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = new Timestamp(System.currentTimeMillis()); // Set current timestamp when entity is created
+        this.updatedAt = new Timestamp(System.currentTimeMillis()); // Set updatedAt initially same as createdAt
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = new Timestamp(System.currentTimeMillis()); // Set updatedAt timestamp when entity is updated
+    }
 }
