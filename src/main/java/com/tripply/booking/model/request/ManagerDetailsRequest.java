@@ -5,11 +5,15 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ManagerDetailsRequest {
-    
+
+    @JsonProperty("userId")
+    private UUID userId;
     @JsonProperty("email")
     private String email;
     @JsonProperty("phoneNumber")

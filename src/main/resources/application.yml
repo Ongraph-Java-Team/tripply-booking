@@ -1,5 +1,5 @@
 server:
-  port: 8087
+  port: 8085
   servlet:
     context-path: /booking
 
@@ -8,17 +8,21 @@ spring:
   application:
     name: booking
   datasource:
-    url: jdbc:postgresql://localhost:5432/Booking_Service
+    url: jdbc:postgresql://localhost:5433/tripply
     username: postgres
-    password: root
+    password: password
+    driver-class-name: org.postgresql.Driver
   # Hibernate properties
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 app:
   base-url: http://localhost:8080
   notification:
     base-url: http://localhost:8087
   auth:
-    base-url: http://localhost:8085
+    base-url: http://localhost:8082
