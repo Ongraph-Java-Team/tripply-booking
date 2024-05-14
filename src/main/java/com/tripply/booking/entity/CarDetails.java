@@ -1,9 +1,6 @@
 package com.tripply.booking.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 import java.sql.Timestamp;
 
@@ -16,6 +13,7 @@ public class CarDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long carId;
 
+    @Column(name = "registration_no")
     private String registrationNo;
 
     @Column(name = "car_model")

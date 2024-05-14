@@ -5,11 +5,9 @@ import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.entity.CarDetails;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.CarRequest;
-import com.tripply.booking.model.response.CarDetailsResponse;
 import com.tripply.booking.model.response.CarResponse;
 import com.tripply.booking.repository.CarRepository;
 import com.tripply.booking.service.CarService;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,18 +37,19 @@ public class CarServiceImpl implements CarService {
         return response;
     }
 
-    public CarDetailsResponse getAllCars() {
-        CarDetailsResponse reponse = new CarDetailsResponse();
-        try {
-            List<CarDetails> carDetails = carRepository.findAll();
-            if (carDetails.isEmpty()){
-                throw new DataNotFoundException("Cars are not available");
-            }
-            reponse.setCarDetails(carDetails);
-            return reponse;
-        } catch (DataNotFoundException e) {
-            throw new DataNotFoundException();
+    public ResponseModel<List<CarResponse>> getAllCars() {
+        ResponseModel<List<CarResponse>> response = new ResponseModel<>();
+        List<CarDetails> carDetails = carRepository.findAll();
+        if (carDetails.isEmpty()) {
+            throw new DataNotFoundException("Cars not found");
         }
+        List<CarResponse> carDetailsList = carDetails.stream()
+                .map(this::setCarDetails)
+                .collect(Collectors.toList());
+        response.setStatus(HttpStatus.FOUND);
+        response.setMessage("Car retrieved successfully.");
+        response.setData(carDetailsList);
+        return response;
     }
 
     public ResponseModel<CarResponse> updateCarDetails(Long carId, CarRequest carRequest) {
@@ -59,7 +59,6 @@ public class CarServiceImpl implements CarService {
         }
 
         CarDetails existingCar = updatedDetails(carRequest, optionalCarDetails);
-
         CarDetails carDetails = carRepository.save(existingCar);
         CarResponse carResponse = setCarDetails(carDetails);
         ResponseModel<CarResponse> response = new ResponseModel<>();
@@ -77,7 +76,7 @@ public class CarServiceImpl implements CarService {
         }
         ResponseModel<String> response = new ResponseModel<>();
         carRepository.deleteById(Math.toIntExact(carId));
-        response.setMessage("Car is delete from the system");
+        response.setMessage("Car is deleted from the system");
         response.setStatus(HttpStatus.OK);
         response.setData("Data removed");
         return response;
@@ -98,28 +97,28 @@ public class CarServiceImpl implements CarService {
         if (carRequest.getLocation() != null) {
             existingCar.setLocation(carRequest.getLocation());
         }
-        if (carRequest.getRate() != 0) { // Assuming rate cannot be null
+        if (carRequest.getRate() != 0) {
             existingCar.setRate(carRequest.getRate());
         }
-        if (carRequest.getManufactureYear() != null) { // Assuming rate cannot be null
+        if (carRequest.getManufactureYear() != null) {
             existingCar.setYear(carRequest.getManufactureYear());
         }
         return existingCar;
     }
 
     private CarResponse setCarDetails(CarDetails carDetails) {
-    CarResponse carResponse = new CarResponse();
-    carResponse.setCarId(carDetails.getCarId());
-    carResponse.setLocation(carDetails.getLocation());
-    carResponse.setYear(carDetails.getYear());
-    carResponse.setRate(carDetails.getRate());
-    carResponse.setUpdatedAt(carDetails.getUpdatedAt());
-    carResponse.setCreatedAt(carDetails.getCreatedAt());
-    carResponse.setAvailability(carDetails.isAvailability());
-    carResponse.setModel(carDetails.getModel());
-    carResponse.setRegistrationNo(carDetails.getRegistrationNo());
-    carResponse.setRentalCompany(carDetails.getRentalCompany());
-    return carResponse;
+        CarResponse carResponse = new CarResponse();
+        carResponse.setCarId(carDetails.getCarId());
+        carResponse.setLocation(carDetails.getLocation());
+        carResponse.setYear(carDetails.getYear());
+        carResponse.setRate(carDetails.getRate());
+        carResponse.setUpdatedAt(carDetails.getUpdatedAt());
+        carResponse.setCreatedAt(carDetails.getCreatedAt());
+        carResponse.setAvailability(carDetails.isAvailability());
+        carResponse.setModel(carDetails.getModel());
+        carResponse.setRegistrationNo(carDetails.getRegistrationNo());
+        carResponse.setRentalCompany(carDetails.getRentalCompany());
+        return carResponse;
     }
 
     private static CarDetails getCarDetails(CarRequest carRequest) {
@@ -142,7 +141,7 @@ public class CarServiceImpl implements CarService {
         return carDetails.isPresent();
     }
 
-    private CarResponse setAddedCar(String registrationNo){
+    private CarResponse setAddedCar(String registrationNo) {
         Optional<CarDetails> carDetailsOptional = carRepository.getCarDetailsByRegistrationNo(registrationNo);
         CarResponse carResponse = new CarResponse();
         CarDetails carDetails = carDetailsOptional.get();
