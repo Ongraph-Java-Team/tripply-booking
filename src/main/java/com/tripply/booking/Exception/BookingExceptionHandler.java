@@ -3,18 +3,19 @@ package com.tripply.booking.Exception;
 import com.tripply.booking.constants.enums.ErrorConstant;
 import com.tripply.booking.model.ErrorDetails;
 import com.tripply.booking.model.ResponseModel;
-import com.tripply.booking.model.response.ApiErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
-@ControllerAdvice
+@RestControllerAdvice
 public class BookingExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
@@ -71,6 +72,34 @@ public class BookingExceptionHandler {
                 .build()));
         errorResponse.setTimestamp(LocalDateTime.now());
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ResponseModel<String>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.error("DataIntegrityViolationException handled with message: ", ex);
+        ResponseModel<String> errorResponse = new ResponseModel<>();
+        errorResponse.setStatus(HttpStatus.BAD_REQUEST);
+        errorResponse.setTimestamp(LocalDateTime.now());
+        errorResponse.setErrors(List.of(ErrorDetails.builder()
+                .errorCode(ErrorConstant.ER003.getErrorCode())
+                .errorDesc(ex.getMessage())
+                .build()));
+        errorResponse.setTimestamp(LocalDateTime.now());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ResponseModel<String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        log.error("MethodArgumentNotValidException handled with message: ", ex);
+        ResponseModel<String> errorResponse = new ResponseModel<>();
+        errorResponse.setStatus(HttpStatus.BAD_REQUEST);
+        errorResponse.setTimestamp(LocalDateTime.now());
+        errorResponse.setErrors(ex.getBindingResult().getAllErrors().stream().map(error -> ErrorDetails.builder()
+                .errorCode(ErrorConstant.ER003.getErrorCode())
+                .errorDesc(error.getDefaultMessage())
+                .build()).toList());
+        errorResponse.setTimestamp(LocalDateTime.now());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
 }

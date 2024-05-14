@@ -1,6 +1,7 @@
 package com.tripply.booking.model.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,6 +15,7 @@ public class HotelRequest {
 
     @JsonProperty("name")
     private String name;
+    @NotBlank(message = "Registration number can't be empty")
     @JsonProperty("registrationNumber")
     private String registrationNumber;
     @JsonProperty("address")
