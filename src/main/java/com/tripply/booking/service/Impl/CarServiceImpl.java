@@ -5,6 +5,7 @@ import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.entity.CarDetails;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.CarRequest;
+import com.tripply.booking.model.request.UpdateCarRequest;
 import com.tripply.booking.model.response.CarResponse;
 import com.tripply.booking.repository.CarRepository;
 import com.tripply.booking.service.CarService;
@@ -52,13 +53,13 @@ public class CarServiceImpl implements CarService {
         return response;
     }
 
-    public ResponseModel<CarResponse> updateCarDetails(Long carId, CarRequest carRequest) {
+    public ResponseModel<CarResponse> updateCarDetails(Long carId, UpdateCarRequest updateCarRequest) {
         Optional<CarDetails> optionalCarDetails = carRepository.findById(Math.toIntExact(carId));
         if (optionalCarDetails.isEmpty()) {
             throw new DataNotFoundException("Car not found with ID: " + carId);
         }
 
-        CarDetails existingCar = updatedDetails(carRequest, optionalCarDetails);
+        CarDetails existingCar = updatedDetails(updateCarRequest, optionalCarDetails);
         CarDetails carDetails = carRepository.save(existingCar);
         CarResponse carResponse = setCarDetails(carDetails);
         ResponseModel<CarResponse> response = new ResponseModel<>();
@@ -82,26 +83,26 @@ public class CarServiceImpl implements CarService {
         return response;
     }
 
-    private static CarDetails updatedDetails(CarRequest carRequest, Optional<CarDetails> optionalCarDetails) {
+    private static CarDetails updatedDetails(UpdateCarRequest updateCarRequest, Optional<CarDetails> optionalCarDetails) {
         CarDetails existingCar = optionalCarDetails.get();
 
-        if (carRequest.getModel() != null) {
-            existingCar.setModel(carRequest.getModel());
+        if (updateCarRequest.getModel() != null) {
+            existingCar.setModel(updateCarRequest.getModel());
         }
-        if (carRequest.getManufactureYear() != null) {
-            existingCar.setYear(carRequest.getManufactureYear());
+        if (updateCarRequest.getManufactureYear() != null) {
+            existingCar.setYear(updateCarRequest.getManufactureYear());
         }
-        if (carRequest.getRentalCompany() != null) {
-            existingCar.setRentalCompany(carRequest.getRentalCompany());
+        if (updateCarRequest.getRentalCompany() != null) {
+            existingCar.setRentalCompany(updateCarRequest.getRentalCompany());
         }
-        if (carRequest.getLocation() != null) {
-            existingCar.setLocation(carRequest.getLocation());
+        if (updateCarRequest.getLocation() != null) {
+            existingCar.setLocation(updateCarRequest.getLocation());
         }
-        if (carRequest.getRate() != 0) {
-            existingCar.setRate(carRequest.getRate());
+        if (updateCarRequest.getRate() != 0) {
+            existingCar.setRate(updateCarRequest.getRate());
         }
-        if (carRequest.getManufactureYear() != null) {
-            existingCar.setYear(carRequest.getManufactureYear());
+        if (updateCarRequest.getManufactureYear() != null) {
+            existingCar.setYear(updateCarRequest.getManufactureYear());
         }
         return existingCar;
     }
@@ -130,7 +131,7 @@ public class CarServiceImpl implements CarService {
         carDetails.setRate(carRequest.getRate());
         carDetails.setRentalCompany(carRequest.getRentalCompany());
         carDetails.setLocation(carRequest.getLocation());
-        carDetails.setAvailability(true);
+        carDetails.setAvailability(carRequest.isAvailability());
         return carDetails;
     }
 

@@ -5,10 +5,10 @@ import com.tripply.booking.model.request.HotelRequest;
 import com.tripply.booking.model.response.HotelResponse;
 import com.tripply.booking.model.response.InviteResponse;
 import com.tripply.booking.service.HotelService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -22,7 +22,7 @@ public class HotelController {
     private HotelService hotelService;
 
     @PostMapping
-    public ResponseEntity<ResponseModel<InviteResponse>> addHotel(@Validated @RequestBody HotelRequest hotelRequest) {
+    public ResponseEntity<ResponseModel<InviteResponse>> addHotel(@Valid @RequestBody HotelRequest hotelRequest) {
         log.info("Start Endpoint: / addHotel(): {}", hotelRequest.getName());
         ResponseModel<InviteResponse> response = hotelService.createHotel(hotelRequest);
         log.info("End Endpoint: / addHotel(): {}", hotelRequest.getName());
