@@ -5,21 +5,31 @@ import com.tripply.booking.config.WebClientService;
 import com.tripply.booking.entity.Hotel;
 import com.tripply.booking.entity.HotelRating;
 import com.tripply.booking.model.ResponseModel;
+import com.tripply.booking.model.TopRatedHotelProjection;
 import com.tripply.booking.model.request.RatingRequest;
 import com.tripply.booking.model.response.RatingResponse;
 import com.tripply.booking.repository.HotelRatingRepository;
 import com.tripply.booking.repository.HotelRepository;
 import com.tripply.booking.repository.UserProfileRepository;
 import com.tripply.booking.service.RatingService;
+import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.tripply.booking.constants.BookingConstant.CHECK_USER_ALREADY_EXIST;
 import static com.tripply.booking.constants.BookingConstant.DUMMY_TOKEN;
@@ -66,6 +76,48 @@ public class RatingServiceImpl implements RatingService {
         return response;
     }
 
+    @Override
+    public ResponseModel<List<RatingResponse>> getAllRatings(UUID userId, UUID hotelId, Integer minRating, Integer maxRating, String sortBy, String sortOrder, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortOrder), sortBy));
+        Specification<HotelRating> specification = buildSpecification(userId, hotelId, minRating, maxRating);
+
+        Page<HotelRating> ratingsPage = hotelRatingRepository.findAll(specification, pageable);
+        List<RatingResponse> ratingResponses = ratingsPage.getContent().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        ResponseModel<List<RatingResponse>> response = new ResponseModel<>();
+        response.setData(ratingResponses);
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Ratings retrieved successfully");
+        return response;
+    }
+
+    private Specification<HotelRating> buildSpecification(UUID userId, UUID hotelId, Integer minRating, Integer maxRating) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (userId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("userId"), userId));
+            }
+            if (hotelId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("hotel").get("id"), hotelId));
+            }
+            if (minRating != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("rating"), minRating));
+            }
+            if (maxRating != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("rating"), maxRating));
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private RatingResponse convertToResponse(HotelRating hotelRating) {
+        RatingResponse ratingResponse = new RatingResponse();
+        BeanUtils.copyProperties(hotelRating, ratingResponse);
+        return ratingResponse;
+    }
+
     private boolean checkedUserAlreadyPresent(UUID userId) {
         log.info("Begin checkedUserAlreadyPresent() for the userId: {} ", userId);
         try {
@@ -77,6 +129,16 @@ public class RatingServiceImpl implements RatingService {
             log.error("Catching error for userId: {}", userId, e);
             return false;
         }
+    }
+
+    @Override
+    public ResponseModel<List<TopRatedHotelProjection>> getTopRatedHotels(Integer top) {
+        List<TopRatedHotelProjection> topRatedHotels = hotelRatingRepository.findTopRatedHotels(PageRequest.of(0, top)).getContent();
+        ResponseModel<List<TopRatedHotelProjection>> response = new ResponseModel<>();
+        response.setData(topRatedHotels);
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Top "+top+" rated hotels retrieved successfully");
+        return response;
     }
 
 }
