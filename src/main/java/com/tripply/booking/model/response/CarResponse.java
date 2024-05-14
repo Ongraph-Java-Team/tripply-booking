@@ -12,7 +12,7 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 public class CarResponse {
 
-    private String carId;
+    private Long carId;
     private String registrationNo;
     private String model;
     private String year;

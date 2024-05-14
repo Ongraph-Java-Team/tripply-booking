@@ -38,19 +38,6 @@ public class CarServiceImpl implements CarService {
         return response;
     }
 
-    private static CarDetails getCarDetails(CarRequest carRequest) {
-        CarDetails carDetails = new CarDetails();
-        carDetails.setRegistrationNo(carRequest.getRegistrationNo());
-        carDetails.setModel(carRequest.getModel());
-        carDetails.setYear(carRequest.getManufactureYear());
-        carDetails.setAvailability(carRequest.isAvailability());
-        carDetails.setRate(carRequest.getRate());
-        carDetails.setRentalCompany(carRequest.getRentalCompany());
-        carDetails.setLocation(carRequest.getLocation());
-        carDetails.setAvailability(true);
-        return carDetails;
-    }
-
     public CarDetailsResponse getAllCars() {
         CarDetailsResponse reponse = new CarDetailsResponse();
         try {
@@ -65,6 +52,90 @@ public class CarServiceImpl implements CarService {
         }
     }
 
+    public ResponseModel<CarResponse> updateCarDetails(Long carId, CarRequest carRequest) {
+        Optional<CarDetails> optionalCarDetails = carRepository.findById(Math.toIntExact(carId));
+        if (optionalCarDetails.isEmpty()) {
+            throw new DataNotFoundException("Car not found with ID: " + carId);
+        }
+
+        CarDetails existingCar = updatedDetails(carRequest, optionalCarDetails);
+
+        CarDetails carDetails = carRepository.save(existingCar);
+        CarResponse carResponse = setCarDetails(carDetails);
+        ResponseModel<CarResponse> response = new ResponseModel<>();
+        response.setMessage("Car details updated successfully");
+        response.setStatus(HttpStatus.OK);
+        response.setData(carResponse);
+        return response;
+    }
+
+    @Override
+    public ResponseModel<String> removeCar(Long carId) {
+        Optional<CarDetails> optionalCarDetails = carRepository.findById(Math.toIntExact(carId));
+        if (optionalCarDetails.isEmpty()) {
+            throw new DataNotFoundException("Car not found with ID: " + carId);
+        }
+        ResponseModel<String> response = new ResponseModel<>();
+        carRepository.deleteById(Math.toIntExact(carId));
+        response.setMessage("Car is delete from the system");
+        response.setStatus(HttpStatus.OK);
+        response.setData("Data removed");
+        return response;
+    }
+
+    private static CarDetails updatedDetails(CarRequest carRequest, Optional<CarDetails> optionalCarDetails) {
+        CarDetails existingCar = optionalCarDetails.get();
+
+        if (carRequest.getModel() != null) {
+            existingCar.setModel(carRequest.getModel());
+        }
+        if (carRequest.getManufactureYear() != null) {
+            existingCar.setYear(carRequest.getManufactureYear());
+        }
+        if (carRequest.getRentalCompany() != null) {
+            existingCar.setRentalCompany(carRequest.getRentalCompany());
+        }
+        if (carRequest.getLocation() != null) {
+            existingCar.setLocation(carRequest.getLocation());
+        }
+        if (carRequest.getRate() != 0) { // Assuming rate cannot be null
+            existingCar.setRate(carRequest.getRate());
+        }
+        if (carRequest.getManufactureYear() != null) { // Assuming rate cannot be null
+            existingCar.setYear(carRequest.getManufactureYear());
+        }
+        return existingCar;
+    }
+
+    private CarResponse setCarDetails(CarDetails carDetails) {
+    CarResponse carResponse = new CarResponse();
+    carResponse.setCarId(carDetails.getCarId());
+    carResponse.setLocation(carDetails.getLocation());
+    carResponse.setYear(carDetails.getYear());
+    carResponse.setRate(carDetails.getRate());
+    carResponse.setUpdatedAt(carDetails.getUpdatedAt());
+    carResponse.setCreatedAt(carDetails.getCreatedAt());
+    carResponse.setAvailability(carDetails.isAvailability());
+    carResponse.setModel(carDetails.getModel());
+    carResponse.setRegistrationNo(carDetails.getRegistrationNo());
+    carResponse.setRentalCompany(carDetails.getRentalCompany());
+    return carResponse;
+    }
+
+    private static CarDetails getCarDetails(CarRequest carRequest) {
+        CarDetails carDetails = new CarDetails();
+        carDetails.setRegistrationNo(carRequest.getRegistrationNo());
+        carDetails.setModel(carRequest.getModel());
+        carDetails.setYear(carRequest.getManufactureYear());
+        carDetails.setAvailability(carRequest.isAvailability());
+        carDetails.setRate(carRequest.getRate());
+        carDetails.setRentalCompany(carRequest.getRentalCompany());
+        carDetails.setLocation(carRequest.getLocation());
+        carDetails.setAvailability(true);
+        return carDetails;
+    }
+
+
     private boolean checkedIsCarAvailable(String registrationNo) {
         log.info("Begin checkedIsCarAvailable() for the registrationNo: {} ", registrationNo);
         Optional<CarDetails> carDetails = carRepository.getCarDetailsByRegistrationNo(registrationNo);
@@ -75,7 +146,7 @@ public class CarServiceImpl implements CarService {
         Optional<CarDetails> carDetailsOptional = carRepository.getCarDetailsByRegistrationNo(registrationNo);
         CarResponse carResponse = new CarResponse();
         CarDetails carDetails = carDetailsOptional.get();
-        carResponse.setCarId(String.valueOf(carDetails.getCarId()));
+        carResponse.setCarId(carDetails.getCarId());
         carResponse.setRegistrationNo(carDetails.getRegistrationNo());
         carResponse.setModel(carDetails.getModel());
         carResponse.setYear(carDetails.getYear());
