@@ -48,7 +48,9 @@ public class RatingController {
 
     @GetMapping("/top-rated-hotels")
     public ResponseEntity<ResponseModel<List<TopRatedHotelProjection>>> getTopRatedHotels(@RequestParam(value = "top", defaultValue = "5") Integer top) {
+        log.info("Start Endpoint: /top-rated-hotels getTopRatedHotels() with top: {}", top);
         ResponseModel<List<TopRatedHotelProjection>> response = ratingService.getTopRatedHotels(top);
+        log.info("End Endpoint: /top-rated-hotels getTopRatedHotels() with top: {}", top);
         return new ResponseEntity<>(response, response.getStatus());
     }
 
