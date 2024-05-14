@@ -13,17 +13,22 @@ import java.util.List;
 @NoArgsConstructor
 public class HotelRequest {
 
+    @NotBlank(message = "hotel name can't be empty")
     @JsonProperty("name")
     private String name;
     @NotBlank(message = "Registration number can't be empty")
     @JsonProperty("registrationNumber")
     private String registrationNumber;
+    @NotBlank(message = "address can't be empty")
     @JsonProperty("address")
     private String address;
+    @NotBlank(message = "city can't be empty")
     @JsonProperty("city")
     private String city;
+    @NotBlank(message = "stateId can't be empty")
     @JsonProperty("stateId")
     private String stateId;
+    @NotBlank(message = "countryId can't be empty")
     @JsonProperty("countryId")
     private String countryId;
     @JsonProperty("description")
