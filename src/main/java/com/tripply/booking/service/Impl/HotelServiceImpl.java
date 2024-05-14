@@ -6,6 +6,7 @@ import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.Exception.ServiceCommunicationException;
 import com.tripply.booking.config.WebClientService;
 import com.tripply.booking.constants.enums.InvitationCategory;
+import com.tripply.booking.entity.BaseEntity;
 import com.tripply.booking.entity.Hotel;
 import com.tripply.booking.entity.HotelManager;
 import com.tripply.booking.entity.UserProfile;
@@ -19,6 +20,7 @@ import com.tripply.booking.repository.HotelManagerRepository;
 import com.tripply.booking.repository.HotelRepository;
 import com.tripply.booking.service.HotelService;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +32,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -140,6 +143,63 @@ public class HotelServiceImpl implements HotelService {
         } catch (Exception e) {
             log.error("Catching error for emailID: {}", sentToEmail, e);
             return false;
+        }
+    }
+
+    @Override
+    public ResponseModel<HotelResponse> updateHotelDetails(UUID hotelId, HotelRequest hotelRequest) {
+        log.info("HotelService: Begin update hotel details with hotelId: {}", hotelId);
+
+        try {
+            Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
+                    () -> new DataNotFoundException("Failed to update hotel details: " + hotelId)
+            );
+
+            // Update hotel details
+            hotel.setName(hotelRequest.getName());
+            hotel.setAddress(hotelRequest.getAddress());
+            hotel.setCity(hotelRequest.getCity());
+            hotel.setStateId(hotelRequest.getStateId());
+            hotel.setCountryId(hotelRequest.getCountryId());
+            hotel.setDescription(hotelRequest.getDescription());
+            hotel.setWebsite(hotelRequest.getWebsite());
+
+            // Save the updated hotel
+            hotel = hotelRepository.save(hotel);
+
+            // Construct HotelResponse based on the updated hotel details
+            HotelResponse hotelResponse = new HotelResponse();
+            hotelResponse.setId(hotel.getId());
+            hotelResponse.setName(hotel.getName());
+            // Add other fields as required
+
+            // Fetch existing manager details
+            List<HotelManager> managers = hotelManagerRepository.findByHotel(hotel);
+            HotelManager hotelManager = managers.stream().filter(HotelManager::getIsActive).findFirst().orElseThrow(
+                    () -> new DataNotFoundException("Hotel manager details not found")
+            );
+            UserProfile primaryAdmin = hotelManager.getUserProfile();
+
+
+            // Create the response model
+            ResponseModel<HotelResponse> responseModel = new ResponseModel<>();
+            responseModel.setStatus(HttpStatus.OK);
+            responseModel.setMessage("Hotel details updated successfully.");
+            responseModel.setTimestamp(LocalDateTime.now());
+            responseModel.setData(hotelResponse);
+
+            log.info("HotelService: End update hotel details with hotelId: {}", hotelId);
+            return responseModel;
+        } catch (DataNotFoundException e) {
+            ResponseModel<HotelResponse> response = new ResponseModel<>();
+            response.setStatus(HttpStatus.NOT_FOUND);
+            response.setMessage("Hotel not found with ID: " + hotelId);
+            return response;
+        } catch (Exception e) {
+            ResponseModel<HotelResponse> response = new ResponseModel<>();
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            response.setMessage("An unexpected error occurred. Please try again later.");
+            return response;
         }
     }
 

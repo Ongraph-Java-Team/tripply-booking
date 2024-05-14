@@ -11,5 +11,6 @@ public interface HotelService {
 
     ResponseModel<InviteResponse> createHotel(HotelRequest hotelRequest);
     ResponseModel<HotelResponse> getHotelById(UUID hotelId);
+    ResponseModel<HotelResponse> updateHotelDetails(UUID hotelId, HotelRequest hotelRequest);
 
 }
