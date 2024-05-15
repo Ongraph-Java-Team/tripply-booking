@@ -10,8 +10,11 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/tripply
     username: postgres
-    password: Jatin@300
+    password: postgres
     driver-class-name: org.postgresql.Driver
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
   # Hibernate properties
   jpa:
     hibernate:
