@@ -55,7 +55,7 @@ public class RatingServiceImpl implements RatingService {
         if(checkedUserAlreadyPresent(ratingRequest.getUserId())) {
             throw new DataNotFoundException("User not found with id: " + ratingRequest.getUserId());
         }
-        Hotel hotel = hotelRepository.findById(ratingRequest.getUserId()).orElseThrow(
+        Hotel hotel = hotelRepository.findById(ratingRequest.getHotelId()).orElseThrow(
                 () -> new DataNotFoundException("Hotel not found with id: " + ratingRequest.getHotelId())
         );
         HotelRating hotelRating = new HotelRating();
@@ -115,6 +115,8 @@ public class RatingServiceImpl implements RatingService {
     private RatingResponse convertToResponse(HotelRating hotelRating) {
         RatingResponse ratingResponse = new RatingResponse();
         BeanUtils.copyProperties(hotelRating, ratingResponse);
+        ratingResponse.setHotelId(hotelRating.getHotel().getId());
+        ratingResponse.setComments(hotelRating.getComment());
         return ratingResponse;
     }
 

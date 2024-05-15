@@ -36,7 +36,7 @@ public class RatingController {
             @RequestParam(required = false) UUID hotelId,
             @RequestParam(required = false) Integer minRating,
             @RequestParam(required = false) Integer maxRating,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "createdOn") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
