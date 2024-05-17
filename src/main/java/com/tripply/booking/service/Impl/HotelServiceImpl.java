@@ -150,6 +150,9 @@ public class HotelServiceImpl implements HotelService {
     public ResponseModel<HotelResponse> updateHotelDetails(UUID hotelId, HotelRequest hotelRequest) {
         log.info("HotelService: Begin update hotel details with hotelId: {}", hotelId);
 
+        ResponseModel<HotelResponse> responseModel = new ResponseModel<>();
+        responseModel.setTimestamp(LocalDateTime.now());
+
         try {
             Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
                     () -> new DataNotFoundException("Failed to update hotel details: " + hotelId)
@@ -163,15 +166,14 @@ public class HotelServiceImpl implements HotelService {
             hotel.setCountryId(hotelRequest.getCountryId());
             hotel.setDescription(hotelRequest.getDescription());
             hotel.setWebsite(hotelRequest.getWebsite());
+            hotel.setAmenities(hotelRequest.getAmenities());
 
             // Save the updated hotel
             hotel = hotelRepository.save(hotel);
 
             // Construct HotelResponse based on the updated hotel details
             HotelResponse hotelResponse = new HotelResponse();
-            hotelResponse.setId(hotel.getId());
-            hotelResponse.setName(hotel.getName());
-            // Add other fields as required
+            BeanUtils.copyProperties(hotel, hotelResponse);
 
             // Fetch existing manager details
             List<HotelManager> managers = hotelManagerRepository.findByHotel(hotel);
@@ -180,27 +182,36 @@ public class HotelServiceImpl implements HotelService {
             );
             UserProfile primaryAdmin = hotelManager.getUserProfile();
 
+            if (Objects.nonNull(primaryAdmin)) {
+                HotelManagerPersonalInfo personalInfo = objectMapper.convertValue(primaryAdmin.getPersonalInfo(), HotelManagerPersonalInfo.class);
+                hotelResponse.setAdminName(
+                        String.join(" ",
+                                primaryAdmin.getFirstName(),
+                                primaryAdmin.getLastName()
+                        )
+                );
+                hotelResponse.setAdminEmail(personalInfo.getEmail());
+                hotelResponse.setPhoneNumber(personalInfo.getPhoneNumber());
+                hotelResponse.setCountryCode(personalInfo.getCountryCode());
+            }
 
-            // Create the response model
-            ResponseModel<HotelResponse> responseModel = new ResponseModel<>();
+            // Setting the response model
             responseModel.setStatus(HttpStatus.OK);
             responseModel.setMessage("Hotel details updated successfully.");
-            responseModel.setTimestamp(LocalDateTime.now());
             responseModel.setData(hotelResponse);
 
             log.info("HotelService: End update hotel details with hotelId: {}", hotelId);
             return responseModel;
         } catch (DataNotFoundException e) {
-            ResponseModel<HotelResponse> response = new ResponseModel<>();
-            response.setStatus(HttpStatus.NOT_FOUND);
-            response.setMessage("Hotel not found with ID: " + hotelId);
-            return response;
+            responseModel.setStatus(HttpStatus.NOT_FOUND);
+            responseModel.setMessage("Hotel not found with ID: " + hotelId);
+            return responseModel;
         } catch (Exception e) {
-            ResponseModel<HotelResponse> response = new ResponseModel<>();
-            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            response.setMessage("An unexpected error occurred. Please try again later.");
-            return response;
+            responseModel.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            responseModel.setMessage("An unexpected error occurred. Please try again later.");
+            return responseModel;
         }
     }
+
 
 }
