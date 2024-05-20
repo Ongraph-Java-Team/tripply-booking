@@ -36,8 +36,8 @@ import java.util.UUID;
 
 import static com.tripply.booking.constants.BookingConstant.*;
 
-@Slf4j
 @Service
+@Slf4j
 public class HotelServiceImpl implements HotelService {
 
     @Autowired
