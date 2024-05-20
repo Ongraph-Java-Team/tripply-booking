@@ -31,4 +31,10 @@ public class HotelResponse {
     private String website;
     private List<AmentiesRequest> amenities;
 
+    public HotelResponse(UUID id, String name, String registrationNumber, String description) {
+        this.id = id;
+        this.name = name;
+        this.registrationNumber = registrationNumber;
+        this.description = description;
+    }
 }
