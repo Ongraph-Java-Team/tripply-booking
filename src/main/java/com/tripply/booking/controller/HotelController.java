@@ -5,6 +5,7 @@ import com.tripply.booking.model.request.HotelRequest;
 import com.tripply.booking.model.response.HotelResponse;
 import com.tripply.booking.model.response.InviteResponse;
 import com.tripply.booking.service.HotelService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ public class HotelController {
     @Autowired
     private HotelService hotelService;
 
+    @Operation(summary = "Add Hotel",
+            description = "This API will add hotel and will throw exception if it already exists.")
     @PostMapping
     public ResponseEntity<ResponseModel<InviteResponse>> addHotel(@Valid @RequestBody HotelRequest hotelRequest) {
         log.info("Start Endpoint: / addHotel(): {}", hotelRequest.getName());

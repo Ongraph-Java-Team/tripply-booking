@@ -1,5 +1,6 @@
 package com.tripply.booking.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,8 @@ public class FlightController {
 	@Autowired
 	private FlightService flightService;
 
+	@Operation(summary = "Add Flight",
+			description = "This API will add flight.")
 	@PostMapping(value = "/add-flight", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseModel<FlightResponse> addFlight(@RequestBody FlightRequest flightRequest) {
 		log.info("Endpoint: /add flight start: {}", flightRequest);

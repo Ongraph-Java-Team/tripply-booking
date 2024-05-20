@@ -5,6 +5,7 @@ import com.tripply.booking.model.request.CarRequest;
 import com.tripply.booking.model.request.UpdateCarRequest;
 import com.tripply.booking.model.response.CarResponse;
 import com.tripply.booking.service.CarService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ public class CarController {
     @Autowired
     CarService carService;
 
+    @Operation(summary = "Add Car",
+            description = "This API will add car and will throw exception if car already exists")
     @PostMapping(value = "/cars", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseModel<CarResponse>> addCar(@Valid @RequestBody CarRequest carRequest) {
         log.info("Start Endpoint: /cars triggered to add new Car: {}", carRequest.getModel());
