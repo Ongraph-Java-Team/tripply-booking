@@ -102,8 +102,15 @@ public class HotelServiceImpl implements HotelService {
 
     @Override
     public ResponseModel<Page<HotelResponse>> getAllHotels(String sortBy, String sortOrder, int page, int size) {
+        log.info("Start HotelService getAllHotels() with pageSize: {}", page);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortOrder), sortBy));
         Page<HotelResponse> hotelResponses = hotelRepository.findAllByFilters(pageable);
+        ResponseModel<Page<HotelResponse>> response = new ResponseModel<>();
+        response.setData(hotelResponses);
+        response.setMessage("All hotels data retrieved successfully");
+        response.setStatus(HttpStatus.OK);
+        log.info("End HotelService getAllHotels() with pageSize: {}", page);
+        return response;
     }
 
     private InviteRequest createHotelInviteRequest(HotelRequest hotelRequest) {
