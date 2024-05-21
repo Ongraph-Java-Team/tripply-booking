@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,6 +17,12 @@ import java.util.List;
 
 @Configuration
 public class TripplyConfig {
+
+    @Value("${app.booking.base-url}")
+    private String url;
+
+    @Value("${spring.application.version}")
+    private String version;
 
     /**
      * Configures the objectMapper object.
@@ -44,9 +51,10 @@ public class TripplyConfig {
                 .build();
     }
 
+    @Bean
     public OpenAPI defineOpenApi(){
         Server server = new Server();
-        server.setUrl("http://localhost:8085");
+        server.setUrl(url);
         server.setDescription("Development");
 
         Contact contact = new Contact();
@@ -55,7 +63,7 @@ public class TripplyConfig {
 
         Info information = new Info()
                 .title("Tripply - Hotel Booking System")
-                .version("1.0")
+                .version(version)
                 .description("This API exposes endpoints for booking service")
                 .contact(contact);
         return new OpenAPI().info(information).servers(List.of(server));
