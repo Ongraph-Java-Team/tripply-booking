@@ -23,6 +23,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -36,8 +40,8 @@ import java.util.UUID;
 
 import static com.tripply.booking.constants.BookingConstant.*;
 
-@Slf4j
 @Service
+@Slf4j
 public class HotelServiceImpl implements HotelService {
 
     @Autowired
@@ -93,6 +97,19 @@ public class HotelServiceImpl implements HotelService {
         response.setStatus(HttpStatus.OK);
         response.setData(hotelResponse);
         log.info("End HotelService getHotelById() with id: {}", hotelId);
+        return response;
+    }
+
+    @Override
+    public ResponseModel<Page<HotelResponse>> getAllHotels(String sortBy, String sortOrder, int page, int size) {
+        log.info("Start HotelService getAllHotels() with pageSize: {}", page);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortOrder), sortBy));
+        Page<HotelResponse> hotelResponses = hotelRepository.findAllByFilters(pageable);
+        ResponseModel<Page<HotelResponse>> response = new ResponseModel<>();
+        response.setData(hotelResponses);
+        response.setMessage("All hotels data retrieved successfully");
+        response.setStatus(HttpStatus.OK);
+        log.info("End HotelService getAllHotels() with pageSize: {}", page);
         return response;
     }
 
