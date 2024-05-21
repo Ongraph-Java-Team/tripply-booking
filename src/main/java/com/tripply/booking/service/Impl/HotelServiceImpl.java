@@ -158,24 +158,14 @@ public class HotelServiceImpl implements HotelService {
                     () -> new DataNotFoundException("Failed to update hotel details: " + hotelId)
             );
 
-            // Update hotel details
-            hotel.setName(hotelRequest.getName());
-            hotel.setAddress(hotelRequest.getAddress());
-            hotel.setCity(hotelRequest.getCity());
-            hotel.setStateId(hotelRequest.getStateId());
-            hotel.setCountryId(hotelRequest.getCountryId());
-            hotel.setDescription(hotelRequest.getDescription());
-            hotel.setWebsite(hotelRequest.getWebsite());
-            hotel.setAmenities(hotelRequest.getAmenities());
 
-            // Save the updated hotel
+            BeanUtils.copyProperties(hotelRequest, hotel);
+
             hotel = hotelRepository.save(hotel);
 
-            // Construct HotelResponse based on the updated hotel details
             HotelResponse hotelResponse = new HotelResponse();
             BeanUtils.copyProperties(hotel, hotelResponse);
 
-            // Fetch existing manager details
             List<HotelManager> managers = hotelManagerRepository.findByHotel(hotel);
             HotelManager hotelManager = managers.stream().filter(HotelManager::getIsActive).findFirst().orElseThrow(
                     () -> new DataNotFoundException("Hotel manager details not found")
@@ -195,7 +185,6 @@ public class HotelServiceImpl implements HotelService {
                 hotelResponse.setCountryCode(personalInfo.getCountryCode());
             }
 
-            // Setting the response model
             responseModel.setStatus(HttpStatus.OK);
             responseModel.setMessage("Hotel details updated successfully.");
             responseModel.setData(hotelResponse);
@@ -212,6 +201,7 @@ public class HotelServiceImpl implements HotelService {
             return responseModel;
         }
     }
+
 
 
 }
