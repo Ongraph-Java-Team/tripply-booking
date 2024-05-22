@@ -6,6 +6,7 @@ import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.Exception.ServiceCommunicationException;
 import com.tripply.booking.config.WebClientService;
 import com.tripply.booking.constants.enums.InvitationCategory;
+import com.tripply.booking.entity.BaseEntity;
 import com.tripply.booking.entity.Hotel;
 import com.tripply.booking.entity.HotelManager;
 import com.tripply.booking.entity.UserProfile;
@@ -19,6 +20,7 @@ import com.tripply.booking.repository.HotelManagerRepository;
 import com.tripply.booking.repository.HotelRepository;
 import com.tripply.booking.service.HotelService;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +36,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -159,5 +162,63 @@ public class HotelServiceImpl implements HotelService {
             return false;
         }
     }
+
+    @Override
+    public ResponseModel<HotelResponse> updateHotelDetails(UUID hotelId, HotelRequest hotelRequest) {
+        log.info("HotelService: Begin update hotel details with hotelId: {}", hotelId);
+
+        ResponseModel<HotelResponse> responseModel = new ResponseModel<>();
+        responseModel.setTimestamp(LocalDateTime.now());
+
+        try {
+            Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
+                    () -> new DataNotFoundException("Failed to update hotel details: " + hotelId)
+            );
+
+
+            BeanUtils.copyProperties(hotelRequest, hotel);
+
+            hotel = hotelRepository.save(hotel);
+
+            HotelResponse hotelResponse = new HotelResponse();
+            BeanUtils.copyProperties(hotel, hotelResponse);
+
+            List<HotelManager> managers = hotelManagerRepository.findByHotel(hotel);
+            HotelManager hotelManager = managers.stream().filter(HotelManager::getIsActive).findFirst().orElseThrow(
+                    () -> new DataNotFoundException("Hotel manager details not found")
+            );
+            UserProfile primaryAdmin = hotelManager.getUserProfile();
+
+            if (Objects.nonNull(primaryAdmin)) {
+                HotelManagerPersonalInfo personalInfo = objectMapper.convertValue(primaryAdmin.getPersonalInfo(), HotelManagerPersonalInfo.class);
+                hotelResponse.setAdminName(
+                        String.join(" ",
+                                primaryAdmin.getFirstName(),
+                                primaryAdmin.getLastName()
+                        )
+                );
+                hotelResponse.setAdminEmail(personalInfo.getEmail());
+                hotelResponse.setPhoneNumber(personalInfo.getPhoneNumber());
+                hotelResponse.setCountryCode(personalInfo.getCountryCode());
+            }
+
+            responseModel.setStatus(HttpStatus.OK);
+            responseModel.setMessage("Hotel details updated successfully.");
+            responseModel.setData(hotelResponse);
+
+            log.info("HotelService: End update hotel details with hotelId: {}", hotelId);
+            return responseModel;
+        } catch (DataNotFoundException e) {
+            responseModel.setStatus(HttpStatus.NOT_FOUND);
+            responseModel.setMessage("Hotel not found with ID: " + hotelId);
+            return responseModel;
+        } catch (Exception e) {
+            responseModel.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            responseModel.setMessage("An unexpected error occurred. Please try again later.");
+            return responseModel;
+        }
+    }
+
+
 
 }
