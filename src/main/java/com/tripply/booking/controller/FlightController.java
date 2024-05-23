@@ -22,9 +22,9 @@ public class FlightController {
 
 	@PostMapping
 	public ResponseEntity<ResponseModel<FlightResponse>> addFlight(@RequestBody FlightRequest flightRequest) {
-		log.info("Start Endpoint: /add flight start: {}", flightRequest);
+		log.info("Start Endpoint: /add flight : {}", flightRequest);
 		ResponseModel<FlightResponse> response = flightService.addflight(flightRequest);
-		log.info("End Endpoint: /add flight end : {}", flightRequest);
+		log.info("End Endpoint: /add flight : {}", flightRequest);
 		return ResponseEntity.ok(response);
 	}
 
