@@ -1,12 +1,15 @@
 package com.tripply.booking.service.Impl;
 
-import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import com.tripply.booking.Exception.DataNotFoundException;
+import com.tripply.booking.entity.Flight;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.tripply.booking.Exception.FailToSaveException;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.FlightRequest;
 import com.tripply.booking.model.response.FlightResponse;
@@ -17,37 +20,116 @@ import com.tripply.booking.service.FlightService;
 public class FlightServiceImpl implements FlightService {
 
 	@Autowired
-    FlightRepository flightRepository;
-	
+	FlightRepository flightRepository;
 
 	@Override
 	public ResponseModel<FlightResponse> addflight(FlightRequest flightRequest) {
-		// TODO Auto-generated method stub
-		ResponseModel<FlightResponse> response = null;
 
-		try {
-			flightRequest.setCreatedAt(LocalDateTime.now());
-			flightRequest.setUpdatedAt(LocalDateTime.now());
-			flightRepository.save(flightRequest);
-			FlightResponse flightResponse = new FlightResponse();
-			response = new ResponseModel<>();
-			flightResponse.setFlightId(flightRequest.getFlightId());
-			flightResponse.setAirline(flightRequest.getAirline());
-			flightResponse.setOrigin(flightRequest.getOrigin());
-			flightResponse.setDestination(flightRequest.getDestination());
-			flightResponse.setDepartureTime(flightRequest.getDepartureTime());
-			flightResponse.setArrivalTime(flightRequest.getArrivalTime());
-			flightResponse.setSeatsAvailable(flightRequest.getSeatsAvailable());
-			flightResponse.setCreatedAt(flightRequest.getCreatedAt());
-			flightResponse.setUpdatedAt(flightRequest.getUpdatedAt());
-			response.setStatus(HttpStatus.CREATED);
-			response.setMessage("Flight added successfully.");
-			response.setData(flightResponse);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			throw new FailToSaveException("not created flight");
-		}
+		Flight flight = setFlightDetails(flightRequest);
+		Flight savedFlight = flightRepository.save(flight);
+		FlightResponse flightResponse = setFlightsInResponse(savedFlight);
+		ResponseModel<FlightResponse> response = new ResponseModel<>();
+		response.setStatus(HttpStatus.CREATED);
+		response.setMessage("Flight added successfully.");
+		response.setData(flightResponse);
 		return response;
 	}
 
+	@Override
+	public ResponseModel<List<FlightResponse>> getAllflights() {
+		List<Flight> flights = flightRepository.findAll();
+		if (flights.isEmpty()) {
+			throw new DataNotFoundException("Flight are not Available");
+		}
+		List<FlightResponse> flightList = flights.stream().map(this::setFlightsInResponse).collect(Collectors.toList());
+		ResponseModel<List<FlightResponse>> response = new ResponseModel<>();
+		response.setData(flightList);
+		response.setStatus(HttpStatus.FOUND);
+		response.setMessage("Flight retrieved successfully.");
+		return response;
+	}
+
+	@Override
+	public ResponseModel<FlightResponse> updateFlightById(Long flightId, FlightRequest flightRequest) {
+		Optional<Flight> flightOptional = flightRepository.findById(flightId);
+		if (flightOptional.isEmpty()) {
+			throw new DataNotFoundException("Flight is not present with flightId : " + flightId);
+		}
+		Flight existingFlight = updateFlight(flightOptional, flightRequest);
+		Flight flight = flightRepository.save(existingFlight);
+		FlightResponse flightResponse = setFlightsInResponse(flight);
+		ResponseModel<FlightResponse> response = new ResponseModel<>();
+		response.setMessage("Flight updated successfully");
+		response.setData(flightResponse);
+		response.setStatus(HttpStatus.OK);
+		return response;
+	}
+
+	@Override
+	public ResponseModel<FlightResponse> deleteFlightById(Long flightId) {
+		Optional<Flight> flightOptional = flightRepository.findById(flightId);
+		if (flightOptional.isEmpty()) {
+			throw new DataNotFoundException("Flight is not present with flightId : " + flightId);
+		}
+		flightRepository.deleteById(flightId);
+		ResponseModel<FlightResponse> response = new ResponseModel<>();
+		response.setStatus(HttpStatus.OK);
+		response.setMessage("Flight deleted successfully");
+		return response;
+	}
+
+	private Flight setFlightDetails(FlightRequest flightRequest) {
+		Flight flight = new Flight();
+		flight.setAirline(flightRequest.getAirline());
+		flight.setDestination(flightRequest.getDestination());
+		flight.setOrigin(flightRequest.getOrigin());
+		flight.setDepartureTime(flightRequest.getDepartureTime());
+		flight.setArrivalTime(flightRequest.getArrivalTime());
+		flight.setSeatsAvailable(flightRequest.getSeatsAvailable());
+		return flight;
+	}
+
+	private FlightResponse setFlightsInResponse(Flight flight) {
+		FlightResponse flightResponse = new FlightResponse();
+		flightResponse.setAirline(flight.getAirline());
+		flightResponse.setFlightId(flight.getFlightId());
+		flightResponse.setOrigin(flight.getOrigin());
+		flightResponse.setSeatsAvailable(flight.getSeatsAvailable());
+		flightResponse.setDestination(flight.getDestination());
+		flightResponse.setArrivalTime(flight.getArrivalTime());
+		flightResponse.setDepartureTime(flight.getDepartureTime());
+		flightResponse.setCreatedAt(flight.getCreatedAt());
+		flightResponse.setUpdatedAt(flight.getUpdatedAt());
+		return flightResponse;
+	}
+
+	private Flight updateFlight(Optional<Flight> flightOptional, FlightRequest flightRequest) {
+		Flight flight = flightOptional.get();
+
+		if (flightRequest.getAirline() != null) {
+			flight.setAirline(flight.getAirline());
+		}
+
+		if (flightRequest.getDestination() != null) {
+			flight.setDestination(flightRequest.getDestination());
+		}
+
+		if (flightRequest.getOrigin() != null) {
+			flight.setOrigin(flightRequest.getOrigin());
+		}
+
+		if (flightRequest.getDepartureTime() != null) {
+			flight.setDepartureTime(flightRequest.getDepartureTime());
+		}
+
+		if (flightRequest.getArrivalTime() != null) {
+			flight.setArrivalTime(flightRequest.getArrivalTime());
+		}
+
+		if (flightRequest.getSeatsAvailable() != 0) {
+			flight.setSeatsAvailable(flightRequest.getSeatsAvailable());
+		}
+
+		return flight;
+	}
 }
