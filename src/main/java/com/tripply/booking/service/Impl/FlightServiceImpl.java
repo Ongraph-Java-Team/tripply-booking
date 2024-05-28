@@ -26,8 +26,8 @@ public class FlightServiceImpl implements FlightService {
 	public ResponseModel<FlightResponse> addflight(FlightRequest flightRequest) {
 
 		Flight flight = setFlightDetails(flightRequest);
-		Flight savedFlight = flightRepository.save(flight);
-		FlightResponse flightResponse = setFlightsInResponse(savedFlight);
+		flight = flightRepository.save(flight);
+		FlightResponse flightResponse = setFlightsInResponse(flight);
 		ResponseModel<FlightResponse> response = new ResponseModel<>();
 		response.setStatus(HttpStatus.CREATED);
 		response.setMessage("Flight added successfully.");
@@ -86,28 +86,30 @@ public class FlightServiceImpl implements FlightService {
 		flight.setDepartureTime(flightRequest.getDepartureTime());
 		flight.setArrivalTime(flightRequest.getArrivalTime());
 		flight.setSeatsAvailable(flightRequest.getSeatsAvailable());
+		flight.setFlightNo(flightRequest.getFlightNo());
 		return flight;
 	}
 
 	private FlightResponse setFlightsInResponse(Flight flight) {
-		FlightResponse flightResponse = new FlightResponse();
-		flightResponse.setAirline(flight.getAirline());
-		flightResponse.setFlightId(flight.getFlightId());
-		flightResponse.setOrigin(flight.getOrigin());
-		flightResponse.setSeatsAvailable(flight.getSeatsAvailable());
-		flightResponse.setDestination(flight.getDestination());
-		flightResponse.setArrivalTime(flight.getArrivalTime());
-		flightResponse.setDepartureTime(flight.getDepartureTime());
-		flightResponse.setCreatedAt(flight.getCreatedAt());
-		flightResponse.setUpdatedAt(flight.getUpdatedAt());
-		return flightResponse;
+		return FlightResponse.builder()
+				.flightId(flight.getFlightId())
+				.airline(flight.getAirline())
+				.origin(flight.getOrigin())
+				.destination(flight.getDestination())
+				.seatsAvailable(flight.getSeatsAvailable())
+				.departureTime(flight.getDepartureTime())
+				.arrivalTime(flight.getArrivalTime())
+				.createdAt(flight.getCreatedAt())
+				.updatedAt(flight.getUpdatedAt())
+				.flightNo(flight.getFlightNo())
+				.build();
 	}
 
 	private Flight updateFlight(Optional<Flight> flightOptional, FlightRequest flightRequest) {
 		Flight flight = flightOptional.get();
 
 		if (flightRequest.getAirline() != null) {
-			flight.setAirline(flight.getAirline());
+			flight.setAirline(flightRequest.getAirline());
 		}
 
 		if (flightRequest.getDestination() != null) {

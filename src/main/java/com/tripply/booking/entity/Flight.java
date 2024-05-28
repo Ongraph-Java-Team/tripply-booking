@@ -16,6 +16,9 @@ public class Flight {
     private Long flightId;
 
     @Column(nullable = false, unique = true)
+    private String flightNo;
+
+    @Column(nullable = false)
     private String airline;
 
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package com.tripply.booking.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class FlightController {
 	private FlightService flightService;
 
 	@PostMapping
-	public ResponseEntity<ResponseModel<FlightResponse>> addFlight(@RequestBody FlightRequest flightRequest) {
+	public ResponseEntity<ResponseModel<FlightResponse>> addFlight(@Valid @RequestBody FlightRequest flightRequest) {
 		log.info("Start Endpoint: /add flight : {}", flightRequest);
 		ResponseModel<FlightResponse> response = flightService.addflight(flightRequest);
 		log.info("End Endpoint: /add flight : {}", flightRequest);
