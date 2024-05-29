@@ -7,7 +7,6 @@ import com.tripply.booking.model.request.CountryCodeRequest;
 import com.tripply.booking.model.response.CountryCodeResponse;
 import com.tripply.booking.repository.LookupRepository;
 import com.tripply.booking.service.LookupService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +17,11 @@ import java.util.stream.Collectors;
 @Service
 public class LookupServiceImpl implements LookupService {
 
-    @Autowired
-    LookupRepository lookupRepository;
+    private final LookupRepository lookupRepository;
+
+    public LookupServiceImpl(LookupRepository lookupRepository) {
+        this.lookupRepository = lookupRepository;
+    }
 
     @Override
     public ResponseModel<CountryCodeResponse> addCountryCode(CountryCodeRequest request) {
