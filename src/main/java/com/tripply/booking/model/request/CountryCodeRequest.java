@@ -10,11 +10,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CountryCodeRequest {
+
     @NotNull(message = "Name should not be null")
     private String name;
+
     @NotNull(message = "Dial Code should not be null")
     private String dialCode;
+
     @NotNull(message = "Code should not be null")
     @Column(unique = true)
     private String code;
+
 }

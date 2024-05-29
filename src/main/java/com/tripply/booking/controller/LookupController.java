@@ -5,7 +5,6 @@ import com.tripply.booking.model.request.CountryCodeRequest;
 import com.tripply.booking.model.response.CountryCodeResponse;
 import com.tripply.booking.service.LookupService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +15,11 @@ import java.util.List;
 @Slf4j
 public class LookupController {
 
-    @Autowired
-    LookupService lookupService;
+    private final LookupService lookupService;
+
+    public LookupController(LookupService lookupService) {
+        this.lookupService = lookupService;
+    }
 
     @PostMapping("/country-code")
     public ResponseEntity<ResponseModel<CountryCodeResponse>> addCountryCode(@RequestBody CountryCodeRequest lookupRequest) {
