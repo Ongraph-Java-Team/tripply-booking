@@ -5,12 +5,12 @@ import com.tripply.booking.model.ErrorDetails;
 import com.tripply.booking.model.ResponseModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -103,15 +103,18 @@ public class BookingExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-
-    @ExceptionHandler(PropertyReferenceException.class)
-    public ResponseEntity<ResponseModel<String>> handlePropertyReferenceException(PropertyReferenceException ex) {
-        log.error("PropertyReferenceException handled with message: ", ex);
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ResponseModel<String>> handleNoResourceFoundException(NoResourceFoundException ex) {
+        log.error("NoResourceFoundException handled with message: ", ex);
         ResponseModel<String> errorResponse = new ResponseModel<>();
         errorResponse.setStatus(HttpStatus.BAD_REQUEST);
         errorResponse.setTimestamp(LocalDateTime.now());
-        errorResponse.setErrors(List.of(ErrorDetails.builder().errorCode(ErrorConstant.ER003.getErrorCode()).errorDesc(ex.getMessage()).build()));
+        errorResponse.setErrors(List.of(ErrorDetails.builder()
+                .errorCode(ErrorConstant.ER004.getErrorCode())
+                .errorDesc(ErrorConstant.ER004.getErrorDescription())
+                .build()));
         errorResponse.setTimestamp(LocalDateTime.now());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
+
 }

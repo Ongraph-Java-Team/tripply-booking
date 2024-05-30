@@ -3,11 +3,8 @@ package com.tripply.booking.model.request;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,34 +12,16 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "flights")
 public class FlightRequest {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long flightId;
 
-	@Column(nullable = false, unique = true)
+	@NotNull(message = "Flight number must not be null")
+	@Size(min = 5, max = 15, message = "Flight number must be between 5 and 15 characters long.")
+	@Column(unique = true)
+	private String flightNo;
 	private String airline;
-
-	@Column(nullable = false)
 	private String origin;
-
-	@Column(nullable = false)
 	private String destination;
-
-	@Column(nullable = false)
 	private LocalDateTime departureTime;
-
-	@Column(nullable = false)
 	private LocalDateTime arrivalTime;
-
-	@Column(nullable = false)
 	private int seatsAvailable;
-
-	@Column(nullable = false)
-	private LocalDateTime createdAt;
-
-	@Column(nullable = false)
-	private LocalDateTime updatedAt;
 }

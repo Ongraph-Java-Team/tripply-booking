@@ -5,6 +5,7 @@ import com.tripply.booking.model.TopRatedHotelProjection;
 import com.tripply.booking.model.request.RatingRequest;
 import com.tripply.booking.model.response.RatingResponse;
 import com.tripply.booking.service.RatingService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,8 @@ public class RatingController {
     @Autowired
     private RatingService ratingService;
 
+    @Operation(summary = "Add rating",
+            description = "This API will add rating of a hotel and will throw error if hotel or user does not exist.")
     @PostMapping
     public ResponseEntity<ResponseModel<RatingResponse>> addRating(@Valid @RequestBody RatingRequest ratingRequest) {
         log.info("Start Endpoint: / addRating() for user with id: {}", ratingRequest.getUserId());
@@ -30,6 +33,8 @@ public class RatingController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get All ratings",
+            description = "This API will get all ratings of a particular hotel.")
     @GetMapping
     public ResponseEntity<ResponseModel<List<RatingResponse>>> getAllRatings(
             @RequestParam(required = false) UUID userId,
@@ -46,6 +51,8 @@ public class RatingController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Get top rated hotels",
+            description = "This API will give all top rated hotels.")
     @GetMapping("/top-rated-hotels")
     public ResponseEntity<ResponseModel<List<TopRatedHotelProjection>>> getTopRatedHotels(@RequestParam(value = "top", defaultValue = "5") Integer top) {
         log.info("Start Endpoint: /top-rated-hotels getTopRatedHotels() with top: {}", top);
