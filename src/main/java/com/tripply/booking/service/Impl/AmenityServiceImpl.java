@@ -1,5 +1,8 @@
 package com.tripply.booking.service.Impl;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -68,5 +71,30 @@ public class AmenityServiceImpl implements AmenityService {
 			errorResponse.setMessage("Amenity not found");
 			return errorResponse;
 		}
+	}
+
+	@Override
+	public ResponseModel<List<AmenityResponse>> getAllAmenities() {
+		ResponseModel<List<AmenityResponse>> response = new ResponseModel<>();
+		List<Amenity> amenities = amenityRepository.findAll();
+		if (amenities.isEmpty()) {
+			throw new DataNotFoundException("Amenity not found");
+		}
+		List<AmenityResponse> amenityResponses = amenities.stream()
+				.map(this::mapToAmenityResponse)
+				.collect(Collectors.toList());
+		response.setStatus(HttpStatus.OK);
+		response.setMessage("Amenities retrieved successfully.");
+		response.setData(amenityResponses);
+		return response;
+	}
+
+	private AmenityResponse mapToAmenityResponse(Amenity amenity) {
+		AmenityResponse amenityResponse = new AmenityResponse();
+		amenityResponse.setId(amenity.getId());
+		amenityResponse.setAmenityName(amenity.getAmenityName());
+		amenityResponse.setDescription(amenity.getDescription());
+		amenityResponse.setIconURL(amenity.getIconUrl());
+		return amenityResponse;
 	}
 }
