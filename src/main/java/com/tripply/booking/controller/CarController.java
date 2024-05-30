@@ -2,7 +2,6 @@ package com.tripply.booking.controller;
 
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.CarRequest;
-import com.tripply.booking.model.request.UpdateCarRequest;
 import com.tripply.booking.model.response.CarResponse;
 import com.tripply.booking.service.CarService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,10 +41,10 @@ public class CarController {
 
     @PutMapping("/cars/{carId}")
     public ResponseEntity<ResponseModel<CarResponse>> updateCarDetails(
-            @PathVariable Long carId, @RequestBody UpdateCarRequest updateCarRequest) {
-        log.info("Start Endpoint: /cars/{} triggered with updated details: {}", carId, updateCarRequest);
-        ResponseModel<CarResponse> response = carService.updateCarDetails(carId, updateCarRequest);
-        log.info("End Endpoint: /cars/{} triggered with updated details: {}", carId, updateCarRequest);
+            @PathVariable Long carId, @RequestBody CarRequest carRequest) {
+        log.info("Start Endpoint: /cars/{} triggered with updated details: {}", carId, carRequest);
+        ResponseModel<CarResponse> response = carService.updateCarDetails(carId, carRequest);
+        log.info("End Endpoint: /cars/{} triggered with updated details: {}", carId, carRequest);
         return ResponseEntity.ok(response);
     }
 

@@ -1,11 +1,10 @@
 package com.tripply.booking.repository;
 
+import com.tripply.booking.entity.Flight;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.tripply.booking.model.request.FlightRequest;
-
 @Repository
-public interface FlightRepository extends JpaRepository<FlightRequest, Long>{
+public interface FlightRepository extends JpaRepository<Flight, Long>{
 
 }
