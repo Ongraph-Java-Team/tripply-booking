@@ -139,13 +139,13 @@ public class HotelServiceImpl implements HotelService {
                     },
                     DUMMY_TOKEN);
         } catch (WebClientResponseException.BadRequest e) {
-            log.error("Bad request error while sending therapist invite", e);
+            log.error("Bad request error while sending hotel invite", e);
             throw new BadRequestException("User already registered or invite already sent");
         } catch (HttpClientErrorException | HttpServerErrorException e) {
-            log.error("Error while sending therapist invite", e);
+            log.error("Error while sending hotel invite", e);
             throw new ServiceCommunicationException("Error occurred while calling notification service");
         } catch (ResourceAccessException e) {
-            log.error("Network error while sending therapist invite", e);
+            log.error("Network error while sending hotel invite", e);
             throw new ServiceCommunicationException("Network error occurred while calling to notification service");
         }
     }
