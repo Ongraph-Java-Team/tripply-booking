@@ -15,7 +15,7 @@ public class AmentiesRequest {
     @Size(max = 255, message = "Amenity name must be less than 255 characters")
     private String amenityName;
 
-    @Size(max = 1000, message = "Description must be less than 65535 characters")
+    @Size(max = 1000, message = "Description must be less than 1000 characters")
     private String description;
 
     @Size(max = 255, message = "Icon URL must be less than 255 characters")

@@ -15,6 +15,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +39,7 @@ public class RoomServiceImpl implements RoomService {
 	private RoomRepository roomRepository;
 
 	@Override
+	@Async
 	public ResponseModel<List<RoomUploadResponse>> uploadRooms(UUID hotelId, MultipartFile file) throws Exception {
 		Optional<Hotel> hotelOptional = hotelRepository.findById(hotelId);
 		if (!hotelOptional.isPresent()) {
