@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class RoomUploadResponse {
-	private String roomNumber;
-    private String status;
+	private Integer roomNumber;
+    private Integer status;
     private String message;
 
 }
