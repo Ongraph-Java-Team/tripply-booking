@@ -43,58 +43,59 @@ public class AsyncEventServiceImpl implements AsyncEventService {
         savedRoomBulkJob.setStatus(JobStatus.IN_PROGRESS);
         savedRoomBulkJob.setUpdatedAt(LocalDateTime.now());
         savedRoomBulkJob = roomBulkJobRepository.save(savedRoomBulkJob);
-        try {
-            List<Integer> existingRoomNumbers = roomRepository.findRoomNumbersByHotelId(hotel.getId());
-            ExecutorService executorService = Executors.newCachedThreadPool();
-            List<RoomDetailsRequest> roomDetailsList = roomRequest.getRoomDetails();
-            List<CompletableFuture<List<Room>>> futures = new ArrayList<>();
-            List<RoomUploadResponse> roomResponses = new CopyOnWriteArrayList<>();
-            Map<String, Set<Amenity>> amenityMap = new HashMap<>();
-            for (RoomDetailsRequest roomDetails : roomDetailsList) {
-                amenityMap.put(roomDetails.getRoomRange(), amenityRepository.findByIdIn(roomDetails.getAmenities()));
-            }
-            for (RoomDetailsRequest roomDetails : roomDetailsList) {
-                CompletableFuture<List<Room>> future = CompletableFuture.supplyAsync(() -> {
-                    List<Room> rooms = new ArrayList<>();
-                    try {
-                        Set<Amenity> amenities = amenityMap.get(roomDetails.getRoomRange());
-                        String[] range = roomDetails.getRoomRange().split("-");
-                        int start = Integer.parseInt(range[0]);
-                        int end = Integer.parseInt(range[1]);
-                        for (int idx = start; idx <= end; idx++) {
-                            RoomUploadResponse roomUploadResponse = new RoomUploadResponse();
-                            if (!existingRoomNumbers.contains(idx)) {
-                                Room room = new Room();
-                                room.setFloor(roomDetails.getFloor());
-                                room.setRoomNumber(idx);
-                                room.setCategory(roomDetails.getCategory());
-                                room.setHowToReach(roomDetails.getHowToReach());
-                                room.setPrice(roomDetails.getPrice());
-                                room.setExtraAmenties(roomDetails.getExtraAmenities());
-                                room.setCreatedBy(String.valueOf(hotel.getId()));
-                                room.setHotel(hotel);
-                                room.setAmenities(amenities);
-                                rooms.add(room);
-                                roomUploadResponse.setRoomNumber(idx);
-                                roomUploadResponse.setMessage("Room added successfully");
-                                roomUploadResponse.setStatus(201);
-                            } else {
-                                roomUploadResponse.setRoomNumber(idx);
-                                roomUploadResponse.setMessage("Room already exists in our system");
-                                roomUploadResponse.setStatus(302);
-                            }
-                            roomResponses.add(roomUploadResponse);
+        List<Integer> existingRoomNumbers = roomRepository.findRoomNumbersByHotelId(hotel.getId());
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        List<RoomDetailsRequest> roomDetailsList = roomRequest.getRoomDetails();
+        List<CompletableFuture<List<Room>>> futures = new ArrayList<>();
+        List<RoomUploadResponse> roomResponses = new CopyOnWriteArrayList<>();
+        Map<String, Set<Amenity>> amenityMap = new HashMap<>();
+        for(RoomDetailsRequest roomDetails: roomDetailsList) {
+            amenityMap.put(roomDetails.getRoomRange(), amenityRepository.findByIdIn(roomDetails.getAmenities()));
+        }
+        for (RoomDetailsRequest roomDetails : roomDetailsList) {
+            CompletableFuture<List<Room>> future = CompletableFuture.supplyAsync(() -> {
+                List<Room> rooms = new ArrayList<>();
+                try {
+                    Set<Amenity> amenities = amenityMap.get(roomDetails.getRoomRange());
+                    String[] range = roomDetails.getRoomRange().split("-");
+                    int start = Integer.parseInt(range[0]);
+                    int end = Integer.parseInt(range[1]);
+                    for(int idx=start; idx<=end; idx++) {
+                        RoomUploadResponse roomUploadResponse = new RoomUploadResponse();
+                        if(!existingRoomNumbers.contains(idx)) {
+                            Room room = new Room();
+                            room.setFloor(roomDetails.getFloor());
+                            room.setRoomNumber(idx);
+                            room.setCategory(roomDetails.getCategory());
+                            room.setHowToReach(roomDetails.getHowToReach());
+                            room.setPrice(roomDetails.getPrice());
+                            room.setExtraAmenties(roomDetails.getExtraAmenities());
+                            room.setCreatedBy(String.valueOf(hotel.getId()));
+                            room.setHotel(hotel);
+                            room.setAmenities(amenities);
+                            rooms.add(room);
+                            roomUploadResponse.setRoomNumber(idx);
+                            roomUploadResponse.setMessage("Room added successfully");
+                            roomUploadResponse.setStatus(201);
+                        } else {
+                            roomUploadResponse.setRoomNumber(idx);
+                            roomUploadResponse.setMessage("Room already exists in our system");
+                            roomUploadResponse.setStatus(302);
                         }
-                    } catch (Exception e) {
-                        log.error("Exception occurred while processing room: {}", roomDetails.getRoomRange(), e);
+                        roomResponses.add(roomUploadResponse);
                     }
-                    return rooms;
-                }, executorService).exceptionally(ex -> {
-                    log.error("Exception occurred while processing room asynchronously: {}", roomDetails.getRoomRange(), ex);
-                    return new ArrayList<>();
-                });
-                futures.add(future);
-            }
+                } catch (Exception e) {
+                    log.error("Exception occurred while processing room: {}", roomDetails.getRoomRange(), e);
+                }
+                return rooms;
+            }, executorService).exceptionally(ex -> {
+                log.error("Exception occurred while processing room asynchronously: {}", roomDetails.getRoomRange(), ex);
+                return new ArrayList<>();
+            });
+            futures.add(future);
+        }
+
+        try {
             List<Room> allRooms = futures.stream()
                     .map(CompletableFuture::join)
                     .flatMap(List::stream)
@@ -117,6 +118,7 @@ public class AsyncEventServiceImpl implements AsyncEventService {
             }
             savedRoomBulkJob.setRoomUploadResponses(roomResponses);
         } catch (Exception e) {
+            log.error("Exception occurred while adding room details", e);
             savedRoomBulkJob.setStatus(JobStatus.FAILED);
         }
         savedRoomBulkJob.setUpdatedAt(LocalDateTime.now());
