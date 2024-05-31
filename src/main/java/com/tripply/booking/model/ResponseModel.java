@@ -23,5 +23,11 @@ public class ResponseModel<T> {
     private LocalDateTime timestamp;
     private T data;
     private List<ErrorDetails> errors;
-    
+
+    public ResponseModel(T data, String message, HttpStatus status) {
+        this.data = data;
+        this.status = status;
+        this.timestamp = LocalDateTime.now();
+        this.message = message;
+    }
 }

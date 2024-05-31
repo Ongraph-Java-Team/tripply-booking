@@ -32,12 +32,7 @@ public class LookupControllerTest {
     void testAddCountryCode() {
         CountryCodeRequest request = setRequest();
         CountryCodeResponse response = setResponse();
-        ResponseModel<CountryCodeResponse> expectedResponse = new ResponseModel<>();
-        expectedResponse.setMessage("Country Code added successfully");
-        expectedResponse.setStatus(HttpStatus.CREATED);
-        expectedResponse.setData(response);
-
-        when(lookupService.addCountryCode(request)).thenReturn(expectedResponse);
+        when(lookupService.addCountryCode(request)).thenReturn(response);
 
         ResponseEntity<ResponseModel<CountryCodeResponse>> result = countryCodeController.addCountryCode(request);
 
@@ -70,12 +65,7 @@ public class LookupControllerTest {
     @Test
     void testGetAllCountryCode() {
         List<CountryCodeResponse> response = setListResponse();
-        ResponseModel<List<CountryCodeResponse>> expectedResponse = new ResponseModel<>();
-        expectedResponse.setData(response);
-        expectedResponse.setStatus(HttpStatus.FOUND);
-        expectedResponse.setMessage("Country Codes retrieved successfully");
-
-        when(lookupService.getAllCountryCode()).thenReturn(expectedResponse);
+        when(lookupService.getAllCountryCode()).thenReturn(response);
 
         ResponseEntity<ResponseModel<List<CountryCodeResponse>>> result = countryCodeController.getAllCountryCode();
 

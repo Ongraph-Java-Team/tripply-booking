@@ -2,7 +2,6 @@ package com.tripply.booking.service;
 
 import com.tripply.booking.Exception.BadRequestException;
 import com.tripply.booking.entity.CountryCode;
-import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.CountryCodeRequest;
 import com.tripply.booking.model.response.CountryCodeResponse;
 import com.tripply.booking.repository.LookupRepository;
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,12 +41,10 @@ public class LookupServiceTest {
         when(lookupRepository.getCountryCodeByCode(request.getCode())).thenReturn(Optional.empty());
         when(lookupRepository.save(any(CountryCode.class))).thenReturn(countryCode);
 
-        ResponseModel<CountryCodeResponse> response = lookupService.addCountryCode(request);
+       CountryCodeResponse response = lookupService.addCountryCode(request);
 
-        assertNotNull(response.getData());
-        assertEquals("Country Code added successfully", response.getMessage());
-        assertEquals(HttpStatus.CREATED, response.getStatus());
-        assertEquals("AF", response.getData().getCode());
+        assertNotNull(response);
+        assertEquals("AF", response.getCode());
 
         verify(lookupRepository, times(1)).save(any(CountryCode.class));
         verify(lookupRepository, times(1)).getCountryCodeByCode(request.getCode());
@@ -76,12 +72,9 @@ public class LookupServiceTest {
 
         when(lookupRepository.findAll()).thenReturn(countryCodes);
 
-        ResponseModel<List<CountryCodeResponse>> response = lookupService.getAllCountryCode();
+        List<CountryCodeResponse> response = lookupService.getAllCountryCode();
 
-        assertNotNull(response.getData());
-        assertEquals("Country Codes retrieved successfully", response.getMessage());
-        assertEquals(HttpStatus.FOUND, response.getStatus());
-
+        assertNotNull(response);
         verify(lookupRepository, times(1)).findAll();
     }
 
