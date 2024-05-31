@@ -1,142 +1,103 @@
 package com.tripply.booking.service.Impl;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import com.opencsv.CSVReader;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.tripply.booking.Exception.DataNotFoundException;
+import com.tripply.booking.constants.enums.JobStatus;
+import com.tripply.booking.entity.Hotel;
+import com.tripply.booking.entity.RoomBulkJob;
+import com.tripply.booking.model.ResponseModel;
+import com.tripply.booking.model.request.RoomRequest;
+import com.tripply.booking.model.response.RoomBulkJobResponse;
+import com.tripply.booking.repository.AmenityRepository;
+import com.tripply.booking.repository.HotelRepository;
+import com.tripply.booking.repository.RoomBulkJobRepository;
+import com.tripply.booking.repository.RoomRepository;
+import com.tripply.booking.service.AsyncEventService;
+import com.tripply.booking.service.RoomService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.tripply.booking.Exception.BadRequestException;
-import com.tripply.booking.Exception.DataNotFoundException;
-import com.tripply.booking.entity.Hotel;
-import com.tripply.booking.entity.Room;
-import com.tripply.booking.model.ResponseModel;
-import com.tripply.booking.model.response.RoomUploadResponse;
-import com.tripply.booking.repository.HotelRepository;
-import com.tripply.booking.repository.RoomRepository;
-import com.tripply.booking.service.RoomService;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
 public class RoomServiceImpl implements RoomService {
 
-    @Autowired
-    private HotelRepository hotelRepository;
+    private final HotelRepository hotelRepository;
+    private final AsyncEventService asyncEventService;
+    private final RoomBulkJobRepository roomBulkJobRepository;
+    private final AmenityRepository amenityRepository;
+    private final RoomRepository roomRepository;
 
-    @Autowired
-    private RoomRepository roomRepository;
+    public RoomServiceImpl(HotelRepository hotelRepository, AsyncEventService asyncEventService, RoomBulkJobRepository roomBulkJobRepository, AmenityRepository amenityRepository, RoomRepository roomRepository) {
+        this.hotelRepository = hotelRepository;
+        this.asyncEventService = asyncEventService;
+        this.roomBulkJobRepository = roomBulkJobRepository;
+        this.amenityRepository = amenityRepository;
+        this.roomRepository = roomRepository;
+    }
 
     @Override
-    public ResponseModel<List<RoomUploadResponse>> uploadRooms(UUID hotelId, MultipartFile file) throws Exception {
-        Optional<Hotel> hotelOptional = hotelRepository.findById(hotelId);
-        if (hotelOptional.isEmpty()) {
-            throw new DataNotFoundException("Hotel not Found");
-        }
-
-        Hotel hotel = hotelOptional.get();
-
-        String fileType = file.getContentType();
-        if (!fileType.equals("text/csv")
-                && !fileType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
-            throw new BadRequestException("Invalid file format");
-        }
-
-        List<RoomUploadResponse> responses = new ArrayList<>();
-
-        List<Room> rooms = fileType.equals("text/csv") ? parseCSV(file, responses) : parseExcel(file, responses);
-
-        List<Integer> existingRoomNumbers = roomRepository.findRoomNumbersByHotelId(hotelId);
-
-        rooms.forEach(room -> {
-            if (existingRoomNumbers.contains(room.getRoomNumber())) {
-                responses.add(new RoomUploadResponse(room.getRoomNumber(), "Failure",
-                        "Room with number " + room.getRoomNumber() + " already exists in the hotel."));
-            } else {
-                try {
-                    room.setHotel(hotel);
-                    roomRepository.save(room);
-                    responses.add(
-                            new RoomUploadResponse(room.getRoomNumber(), "Success", "Room uploaded successfully."));
-                } catch (Exception e) {
-                    responses.add(new RoomUploadResponse(room.getRoomNumber(), "Failure",
-                            "Failed to upload room: " + e.getMessage()));
-                }
-            }
-        });
-
-        ResponseModel<List<RoomUploadResponse>> responseModel = new ResponseModel<>();
-        responseModel.setData(responses);
+    public ResponseModel<RoomBulkJobResponse> rangeBulkUploadRooms(UUID hotelId, RoomRequest roomRequest) {
+        log.info("RoomService: method -> rangeBulkUploadRooms() with hotelId: {} and totalRoom: {} started", hotelId, roomRequest.getTotalRooms());
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
+                () -> new DataNotFoundException("Specified hotel details not found.")
+        );
+        RoomBulkJob roomBulkJob = new RoomBulkJob();
+        roomBulkJob.setCreatedAt(LocalDateTime.now());
+        roomBulkJob.setRoomRequest(roomRequest);
+        roomBulkJob.setStatus(JobStatus.PENDING);
+        roomBulkJob.setTotalRooms(roomRequest.getTotalRooms());
+        roomBulkJob.setHotelId(hotelId);
+        roomBulkJob.setCreatedBy(String.valueOf(hotelId));
+        RoomBulkJob savedRoomBulkJob = roomBulkJobRepository.save(roomBulkJob);
+        asyncEventService.saveRoomDetailsAsync(savedRoomBulkJob, hotel, roomRequest);
+        ResponseModel<RoomBulkJobResponse> responseModel = new ResponseModel<>();
+        RoomBulkJobResponse bulkJobResponse = RoomBulkJobResponse.builder()
+                .jobId(savedRoomBulkJob.getId())
+                .jobStatus(savedRoomBulkJob.getStatus())
+                .build();
+        responseModel.setData(bulkJobResponse);
+        responseModel.setMessage("Tripply is adding your room details.");
         responseModel.setStatus(HttpStatus.OK);
-        responseModel.setMessage("Rooms uploaded");
-
+        log.info("RoomService: method -> rangeBulkUploadRooms() with hotelId: {} and totalRoom: {} ended", hotelId, roomRequest.getTotalRooms());
         return responseModel;
     }
 
-    private List<Room> parseCSV(MultipartFile file, List<RoomUploadResponse> responses) throws Exception {
-        List<Room> rooms = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(file.getInputStream()));
-             CSVReader csvReader = new CSVReader(br)) {
-            String[] line;
-            int lineNumber = 0;
-            while ((line = csvReader.readNext()) != null) {
-                lineNumber++;
-                if (line[0].equals("room_number")) {
-                    continue;
-                }
-                try {
-                    Room room = new Room();
-                    room.setRoomNumber(line[0]);
-                    room.setCategory(line[1]);
-                    room.setType(line[2]);
-                    room.setPrice(Double.parseDouble(line[3]));
-                    room.setDescription(line[4]);
-                    room.setAmenities(Arrays.asList(line[5].split(";")));
-                    rooms.add(room);
-                } catch (Exception e) {
-                    responses.add(new RoomUploadResponse(line[0], "Failure",
-                            "Failed to parse line " + lineNumber + ": " + e.getMessage()));
-                }
+    @Override
+    public ResponseModel<Page<RoomBulkJobResponse>> listAllRoomBulkJobs(int page, int size, String sortBy, String sortOrder, UUID hotelId) {
+        log.info("RoomService: method -> listAllRoomBulkJobs() with hotelId: {} started", hotelId);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortOrder), sortBy));
+        Specification<RoomBulkJob> spec = (root, query, cb) -> {
+            if (hotelId != null) {
+                return cb.equal(root.get("hotelId"), hotelId);
+            } else {
+                return null;
             }
-        }
-        return rooms;
+        };
+        Page<RoomBulkJobResponse> roomBulkJobResponse = roomBulkJobRepository.findAll(spec, pageable).map(this::convertToResponse);
+        ResponseModel<Page<RoomBulkJobResponse>> responseModel = new ResponseModel<>();
+        responseModel.setData(roomBulkJobResponse);
+        responseModel.setMessage("Room jobs data retrieved successfully.");
+        responseModel.setStatus(HttpStatus.OK);
+        log.info("RoomService: method -> listAllRoomBulkJobs() with hotelId: {} ended", hotelId);
+        return responseModel;
     }
 
-    private List<Room> parseExcel(MultipartFile file, List<RoomUploadResponse> responses) throws Exception {
-        List<Room> rooms = new ArrayList<>();
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
-            int rowNum = 0;
-            for (Row row : sheet) {
-                rowNum++;
-                if (row.getRowNum() == 0) {
-                    continue;
-                }
-                try {
-                    Room room = new Room();
-                    room.setRoomNumber(row.getCell(0).getStringCellValue());
-                    room.setCategory(row.getCell(1).getStringCellValue());
-                    room.setType(row.getCell(2).getStringCellValue());
-                    room.setPrice(row.getCell(3).getNumericCellValue());
-                    room.setDescription(row.getCell(4).getStringCellValue());
-                    room.setAmenities(Arrays.asList(row.getCell(5).getStringCellValue().split(";")));
-                    rooms.add(room);
-                } catch (Exception e) {
-                    responses.add(new RoomUploadResponse(row.getCell(0).getStringCellValue(), "Failure",
-                            "Failed to parse row " + rowNum + ": " + e.getMessage()));
-                }
-            }
-        }
-        return rooms;
+    private RoomBulkJobResponse convertToResponse(RoomBulkJob roomBulkJob) {
+        return RoomBulkJobResponse.builder()
+                .jobId(roomBulkJob.getId())
+                .jobStatus(roomBulkJob.getStatus())
+                .createdOn(roomBulkJob.getCreatedAt())
+                .totalRooms(roomBulkJob.getTotalRooms())
+                .build();
     }
+
 }

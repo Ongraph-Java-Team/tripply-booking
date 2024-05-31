@@ -17,7 +17,7 @@ import java.util.UUID;
 public class HotelRating extends BaseEntity {
 
     @Column(name = "rating")
-    private Integer rating;
+    private Float rating;
     @Column(name = "user_id")
     private UUID userId;
     @ManyToOne

@@ -1,22 +1,24 @@
 package com.tripply.booking.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.tripply.booking.constants.enums.JobStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RatingResponse {
+public class RoomBulkJobResponse {
 
-    private UUID id;
-    private UUID userId;
-    private UUID hotelId;
-    private Float rating;
-    private String comments;
+    private Long jobId;
+    private JobStatus jobStatus;
+    private LocalDateTime createdOn;
+    private Long totalRooms;
 
 }
