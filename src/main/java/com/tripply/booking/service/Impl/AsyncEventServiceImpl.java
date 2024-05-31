@@ -66,6 +66,7 @@ public class AsyncEventServiceImpl implements AsyncEventService {
                             Room room = new Room();
                             room.setFloor(roomDetails.getFloor());
                             room.setRoomNumber(idx);
+                            room.setType(roomDetails.getType());
                             room.setCategory(roomDetails.getCategory());
                             room.setHowToReach(roomDetails.getHowToReach());
                             room.setPrice(roomDetails.getPrice());
