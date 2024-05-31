@@ -3,10 +3,12 @@ package com.tripply.booking.service.Impl;
 import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.constants.enums.JobStatus;
 import com.tripply.booking.entity.Hotel;
+import com.tripply.booking.entity.Room;
 import com.tripply.booking.entity.RoomBulkJob;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.RoomRequest;
 import com.tripply.booking.model.response.RoomBulkJobResponse;
+import com.tripply.booking.model.response.RoomResponse;
 import com.tripply.booking.repository.AmenityRepository;
 import com.tripply.booking.repository.HotelRepository;
 import com.tripply.booking.repository.RoomBulkJobRepository;
@@ -82,7 +84,7 @@ public class RoomServiceImpl implements RoomService {
                 return null;
             }
         };
-        Page<RoomBulkJobResponse> roomBulkJobResponse = roomBulkJobRepository.findAll(spec, pageable).map(this::convertToResponse);
+        Page<RoomBulkJobResponse> roomBulkJobResponse = roomBulkJobRepository.findAll(spec, pageable).map(this::convertToJobResponse);
         ResponseModel<Page<RoomBulkJobResponse>> responseModel = new ResponseModel<>();
         responseModel.setData(roomBulkJobResponse);
         responseModel.setMessage("Room jobs data retrieved successfully.");
@@ -91,12 +93,49 @@ public class RoomServiceImpl implements RoomService {
         return responseModel;
     }
 
-    private RoomBulkJobResponse convertToResponse(RoomBulkJob roomBulkJob) {
+    @Override
+    public ResponseModel<Page<RoomResponse>> listAllRooms(int page, int size, String sortBy, String sortOrder, UUID hotelId) {
+        log.info("RoomService: method -> listAllRooms() with hotelId: {} started", hotelId);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortOrder), sortBy));
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
+                () -> new DataNotFoundException("Specified hotel details not found.")
+        );
+        Specification<RoomBulkJob> spec = (root, query, cb) -> {
+            if (hotelId != null) {
+                return cb.equal(root.get("hotel"), hotel);
+            } else {
+                return null;
+            }
+        };
+        Page<RoomResponse> roomBulkJobResponse = roomRepository.findAll(spec, pageable).map(this::convertToRoomResponse);
+        ResponseModel<Page<RoomResponse>> responseModel = new ResponseModel<>();
+        responseModel.setData(roomBulkJobResponse);
+        responseModel.setMessage("Room jobs data retrieved successfully.");
+        responseModel.setStatus(HttpStatus.OK);
+        log.info("RoomService: method -> listAllRooms() with hotelId: {} ended", hotelId);
+        return responseModel;
+    }
+
+    private RoomBulkJobResponse convertToJobResponse(RoomBulkJob roomBulkJob) {
         return RoomBulkJobResponse.builder()
                 .jobId(roomBulkJob.getId())
                 .jobStatus(roomBulkJob.getStatus())
                 .createdOn(roomBulkJob.getCreatedAt())
                 .totalRooms(roomBulkJob.getTotalRooms())
+                .build();
+    }
+
+    private RoomResponse convertToRoomResponse(Room room) {
+        return RoomResponse.builder()
+                .id(room.getId())
+                .roomNumber(room.getRoomNumber())
+                .price(room.getPrice())
+                .type(room.getType())
+                .category(room.getCategory())
+                .floor(room.getFloor())
+                .createdAt(room.getCreatedAt())
+                .description(room.getDescription())
+                .howToReach(room.getHowToReach())
                 .build();
     }
 
