@@ -25,7 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -97,11 +97,11 @@ public class RoomServiceImpl implements RoomService {
     public ResponseModel<Page<RoomResponse>> listAllRooms(int page, int size, String sortBy, String sortOrder, UUID hotelId) {
         log.info("RoomService: method -> listAllRooms() with hotelId: {} started", hotelId);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortOrder), sortBy));
-        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
-                () -> new DataNotFoundException("Specified hotel details not found.")
-        );
         Specification<RoomBulkJob> spec = (root, query, cb) -> {
-            if (hotelId != null) {
+            if (Objects.nonNull(hotelId)) {
+                Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
+                        () -> new DataNotFoundException("Specified hotel details not found.")
+                );
                 return cb.equal(root.get("hotel"), hotel);
             } else {
                 return null;
@@ -113,6 +113,20 @@ public class RoomServiceImpl implements RoomService {
         responseModel.setMessage("Room jobs data retrieved successfully.");
         responseModel.setStatus(HttpStatus.OK);
         log.info("RoomService: method -> listAllRooms() with hotelId: {} ended", hotelId);
+        return responseModel;
+    }
+
+    @Override
+    public ResponseModel<Room> getRoomDetailsById(Long id) {
+        log.info("RoomService: method -> getRoomDetailsById() with id: {} started", id);
+        Room room = roomRepository.findById(id).orElseThrow(
+                () -> new DataNotFoundException("Specified room details not found in our system.")
+        );
+        ResponseModel<Room> responseModel = new ResponseModel<>();
+        responseModel.setData(room);
+        responseModel.setMessage("Room details retrieved successfully.");
+        log.info("RoomService: method -> getRoomDetailsById() with id: {} ended", id);
+        responseModel.setStatus(HttpStatus.OK);
         return responseModel;
     }
 

@@ -1,5 +1,6 @@
 package com.tripply.booking.controller;
 
+import com.tripply.booking.entity.Room;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.RoomRequest;
 import com.tripply.booking.model.response.RoomBulkJobResponse;
@@ -50,6 +51,14 @@ public class RoomController {
 		log.info("RoomController: method: listAllRooms with hotelId: {} started", hotelId);
 		ResponseModel<Page<RoomResponse>> responses = roomService.listAllRooms(page, size, sortBy, sortOrder, hotelId);
 		log.info("RoomController: method: listAllRooms with hotelId: {} ended", hotelId);
+		return ResponseEntity.ok(responses);
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<ResponseModel<Room>> getRoomDetailsById(@PathVariable Long id) {
+		log.info("RoomController: endpoint: /{id}, method: getRoomDetailsById with id: {} started", id);
+		ResponseModel<Room> responses = roomService.getRoomDetailsById(id);
+		log.info("RoomController: endpoint: /{id}, method: getRoomDetailsById with id: {} ended", id);
 		return ResponseEntity.ok(responses);
 	}
 
