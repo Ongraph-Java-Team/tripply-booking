@@ -27,7 +27,12 @@ public class LookupController {
         log.info("Start Endpoint : adding countrycode : {}", lookupRequest);
         CountryCodeResponse response = lookupService.addCountryCode(lookupRequest);
         log.info("End Endpoint : countrycode added : {}", lookupRequest);
-        return ResponseEntity.ok(new ResponseModel<>(response, "Country Code added successfully", HttpStatus.CREATED));
+        ResponseModel<CountryCodeResponse> responseModel = ResponseModel.<CountryCodeResponse>builder()
+                .data(response)
+                .message("Country Code added successfully")
+                .status(HttpStatus.CREATED)
+                .build();
+        return ResponseEntity.ok(responseModel);
     }
 
     @GetMapping("/country-code")
@@ -35,6 +40,11 @@ public class LookupController {
         log.info("Start Endpoint : getting all countrycode ");
         List<CountryCodeResponse> response = lookupService.getAllCountryCode();
         log.info("End Endpoint : List of countrycode ");
-        return ResponseEntity.ok(new ResponseModel<>(response, "Country Codes retrieved successfully", HttpStatus.FOUND));
+        ResponseModel<List<CountryCodeResponse>> responseModel = ResponseModel.<List<CountryCodeResponse>>builder()
+                .data(response)
+                .message("Country Codes retrieved successfully")
+                .status(HttpStatus.FOUND)
+                .build();
+        return ResponseEntity.ok(responseModel);
     }
 }
