@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface LookupRepository extends JpaRepository<CountryCode, Long> {
+public interface CountryCodeRepository extends JpaRepository<CountryCode, Long> {
 
     Optional<CountryCode> getCountryCodeByCode(String code);
 }
