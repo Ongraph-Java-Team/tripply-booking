@@ -3,9 +3,13 @@ package com.tripply.booking.service.Impl;
 import com.tripply.booking.Exception.BadRequestException;
 import com.tripply.booking.entity.Country;
 import com.tripply.booking.entity.CountryCode;
+import com.tripply.booking.entity.State;
 import com.tripply.booking.model.request.CountryCodeRequest;
+import com.tripply.booking.model.request.StateRequest;
 import com.tripply.booking.model.request.CountryRequest;
 import com.tripply.booking.model.response.CountryCodeResponse;
+import com.tripply.booking.model.response.StateResponse;
+import com.tripply.booking.repository.StateRepository;
 import com.tripply.booking.model.response.CountryResponse;
 import com.tripply.booking.repository.CountryCodeRepository;
 import com.tripply.booking.repository.CountryRepository;
@@ -23,9 +27,13 @@ public class LookupServiceImpl implements LookupService {
 
     private final CountryRepository countryRepository;
 
-    public LookupServiceImpl(CountryCodeRepository countryCodeRepository, CountryRepository countryRepository) {
+    private final StateRepository stateRepository;
+
+    public LookupServiceImpl(CountryCodeRepository countryCodeRepository, CountryRepository countryRepository,
+                             StateRepository stateRepository) {
         this.countryCodeRepository = countryCodeRepository;
         this.countryRepository = countryRepository;
+        this.stateRepository = stateRepository;
     }
 
     @Override
@@ -72,6 +80,32 @@ public class LookupServiceImpl implements LookupService {
                         .countryName(country.getCountryName())
                         .id(country.getId())
                         .build())
+                .collect(Collectors.toList());
+        return response;
+    }
+
+    @Override
+    public StateResponse addState(StateRequest request) {
+        State stateOptional = stateRepository.getStateByStateName(request.getStateName());
+        if (stateOptional!=null) {
+            throw new BadRequestException("State already Added.");
+        }
+        State state = State.builder().stateName(request.getStateName()).countryId(request.getCountryId()).build();
+        state = stateRepository.save(state);
+        StateResponse response = StateResponse.builder()
+                .stateName(state.getStateName())
+                .countryId(state.getCountryId())
+                .id(state.getId()).build();
+        return response;
+    }
+
+    @Override
+    public List<StateResponse> getAllStateByCountryId(Long countryId) {
+        List<State> stateList = stateRepository.findAllByCountryId(countryId);
+        List<StateResponse> response = stateList.stream().map(state -> StateResponse.builder()
+                .stateName(state.getStateName())
+                .countryId(state.getCountryId())
+                .id(state.getId()).build())
                 .collect(Collectors.toList());
         return response;
     }
