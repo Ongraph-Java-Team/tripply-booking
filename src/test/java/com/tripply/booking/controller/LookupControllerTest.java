@@ -4,7 +4,9 @@ import com.tripply.booking.Exception.BadRequestException;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.CountryCodeRequest;
 import com.tripply.booking.model.request.StateRequest;
+import com.tripply.booking.model.request.CountryRequest;
 import com.tripply.booking.model.response.CountryCodeResponse;
+import com.tripply.booking.model.response.CountryResponse;
 import com.tripply.booking.model.response.StateResponse;
 import com.tripply.booking.service.LookupService;
 import org.junit.jupiter.api.Test;
@@ -66,7 +68,7 @@ public class LookupControllerTest {
 
     @Test
     void testGetAllCountryCode() {
-        List<CountryCodeResponse> response = setListResponse();
+        List<CountryCodeResponse> response = setListOfCountrycode();
         when(lookupService.getAllCountryCode()).thenReturn(response);
 
         ResponseEntity<ResponseModel<List<CountryCodeResponse>>> result = countryCodeController.getAllCountryCode();
@@ -77,6 +79,58 @@ public class LookupControllerTest {
         assertEquals(HttpStatus.FOUND, result.getBody().getStatus());
 
         verify(lookupService, times(1)).getAllCountryCode();
+    }
+
+    @Test
+    void testAddCountry() {
+        CountryRequest request = CountryRequest.builder()
+                .countryName("India").build();
+        CountryResponse response = CountryResponse.builder()
+                .countryName("India")
+                .id(1L).build();
+        when(lookupService.addCountry(request)).thenReturn(response);
+
+        ResponseEntity<ResponseModel<CountryResponse>> result = countryCodeController.addCountry(request);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertEquals("Country added successfully", result.getBody().getMessage());
+        assertEquals(HttpStatus.CREATED, result.getBody().getStatus());
+        assertEquals("India", result.getBody().getData().getCountryName());
+
+        verify(lookupService, times(1)).addCountry(request);
+
+    }
+
+    @Test
+    void testAddCountryAlreadyAdded() {
+        CountryRequest request = CountryRequest.builder().countryName("India").build();
+
+        when(lookupService.addCountry(request)).thenThrow(new BadRequestException("Country is already Added.it"));
+
+        BadRequestException thrown = assertThrows(
+                BadRequestException.class,
+                () -> countryCodeController.addCountry(request),
+                "Country is already Added."
+        );
+
+        assertTrue(thrown.getMessage().contains("Country is already Added."));
+        verify(lookupService, times(1)).addCountry(request);
+    }
+
+    @Test
+    void testGetAllCountry() {
+        List<CountryResponse> response = setListOfCountry();
+        when(lookupService.getAllCountry()).thenReturn(response);
+
+        ResponseEntity<ResponseModel<List<CountryResponse>>> result = countryCodeController.getAllCountry();
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertEquals("Country retrieved successfully", result.getBody().getMessage());
+        assertEquals(HttpStatus.FOUND, result.getBody().getStatus());
+
+        verify(lookupService, times(1)).getAllCountry();
     }
 
     @Test
@@ -143,7 +197,7 @@ public class LookupControllerTest {
                 .collect(Collectors.toList());
     }
 
-    private List<CountryCodeResponse> setListResponse() {
+    private List<CountryCodeResponse> setListOfCountrycode() {
         return Stream.of(
                         new CountryCodeResponse(1L, "AF", "+93", "Afghanistan"),
                         new CountryCodeResponse(2L, "US", "+1", "United States"),
@@ -153,6 +207,19 @@ public class LookupControllerTest {
                         .code(data.getCode())
                         .dialCode(data.getDialCode())
                         .name(data.getName())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private List<CountryResponse> setListOfCountry() {
+        return Stream.of(
+                        new CountryResponse(1L, "India"),
+                        new CountryResponse(2L, "UK"),
+                        new CountryResponse(3L, "China")
+                )
+                .map(data -> CountryResponse.builder()
+                        .countryName(data.getCountryName())
+                        .id(data.getId())
                         .build())
                 .collect(Collectors.toList());
     }
