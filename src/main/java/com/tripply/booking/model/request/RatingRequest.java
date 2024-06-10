@@ -16,6 +16,6 @@ public class RatingRequest {
     @NotNull(message = "hotelId can't be null")
     private UUID hotelId;
     @NotNull(message = "rating can't be null")
-    private Integer rating;
+    private Float rating;
     private String comment;
 }

@@ -5,7 +5,6 @@ import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.entity.CarDetails;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.CarRequest;
-import com.tripply.booking.model.request.UpdateCarRequest;
 import com.tripply.booking.model.response.CarResponse;
 import com.tripply.booking.repository.CarRepository;
 import com.tripply.booking.service.CarService;
@@ -53,14 +52,14 @@ public class CarServiceImpl implements CarService {
         return response;
     }
 
-    public ResponseModel<CarResponse> updateCarDetails(Long carId, UpdateCarRequest updateCarRequest) {
+    public ResponseModel<CarResponse> updateCarDetails(Long carId, CarRequest carRequest) {
         Optional<CarDetails> optionalCarDetails = carRepository.findById(Math.toIntExact(carId));
         if (optionalCarDetails.isEmpty()) {
             throw new DataNotFoundException("Car not found with ID: " + carId);
         }
 
-        CarDetails existingCar = updatedDetails(updateCarRequest, optionalCarDetails);
-        CarDetails carDetails = carRepository.save(existingCar);
+        CarDetails carDetails = updatedDetails(carRequest, optionalCarDetails);
+        carDetails = carRepository.save(carDetails);
         CarResponse carResponse = setCarDetails(carDetails);
         ResponseModel<CarResponse> response = new ResponseModel<>();
         response.setMessage("Car details updated successfully");
@@ -83,43 +82,42 @@ public class CarServiceImpl implements CarService {
         return response;
     }
 
-    private static CarDetails updatedDetails(UpdateCarRequest updateCarRequest, Optional<CarDetails> optionalCarDetails) {
+    private static CarDetails updatedDetails(CarRequest carRequest, Optional<CarDetails> optionalCarDetails) {
         CarDetails existingCar = optionalCarDetails.get();
 
-        if (updateCarRequest.getModel() != null) {
-            existingCar.setModel(updateCarRequest.getModel());
+        if (carRequest.getModel() != null) {
+            existingCar.setModel(carRequest.getModel());
         }
-        if (updateCarRequest.getManufactureYear() != null) {
-            existingCar.setYear(updateCarRequest.getManufactureYear());
+        if (carRequest.getManufactureYear() != null) {
+            existingCar.setYear(carRequest.getManufactureYear());
         }
-        if (updateCarRequest.getRentalCompany() != null) {
-            existingCar.setRentalCompany(updateCarRequest.getRentalCompany());
+        if (carRequest.getRentalCompany() != null) {
+            existingCar.setRentalCompany(carRequest.getRentalCompany());
         }
-        if (updateCarRequest.getLocation() != null) {
-            existingCar.setLocation(updateCarRequest.getLocation());
+        if (carRequest.getLocation() != null) {
+            existingCar.setLocation(carRequest.getLocation());
         }
-        if (updateCarRequest.getRate() != 0) {
-            existingCar.setRate(updateCarRequest.getRate());
+        if (carRequest.getRate() != 0) {
+            existingCar.setRate(carRequest.getRate());
         }
-        if (updateCarRequest.getManufactureYear() != null) {
-            existingCar.setYear(updateCarRequest.getManufactureYear());
+        if (carRequest.getManufactureYear() != null) {
+            existingCar.setYear(carRequest.getManufactureYear());
         }
         return existingCar;
     }
 
     private CarResponse setCarDetails(CarDetails carDetails) {
-        CarResponse carResponse = new CarResponse();
-        carResponse.setCarId(carDetails.getCarId());
-        carResponse.setLocation(carDetails.getLocation());
-        carResponse.setYear(carDetails.getYear());
-        carResponse.setRate(carDetails.getRate());
-        carResponse.setUpdatedAt(carDetails.getUpdatedAt());
-        carResponse.setCreatedAt(carDetails.getCreatedAt());
-        carResponse.setAvailability(carDetails.isAvailability());
-        carResponse.setModel(carDetails.getModel());
-        carResponse.setRegistrationNo(carDetails.getRegistrationNo());
-        carResponse.setRentalCompany(carDetails.getRentalCompany());
-        return carResponse;
+        return CarResponse.builder()
+                .rate(carDetails.getRate())
+                .year(carDetails.getYear())
+                .location(carDetails.getLocation())
+                .rentalCompany(carDetails.getRentalCompany())
+                .createdAt(carDetails.getCreatedAt())
+                .updatedAt(carDetails.getUpdatedAt())
+                .registrationNo(carDetails.getRegistrationNo())
+                .model(carDetails.getModel())
+                .carId(carDetails.getCarId())
+                .build();
     }
 
     private static CarDetails getCarDetails(CarRequest carRequest) {

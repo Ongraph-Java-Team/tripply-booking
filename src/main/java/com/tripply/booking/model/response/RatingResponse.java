@@ -16,7 +16,7 @@ public class RatingResponse {
     private UUID id;
     private UUID userId;
     private UUID hotelId;
-    private Integer rating;
+    private Float rating;
     private String comments;
 
 }

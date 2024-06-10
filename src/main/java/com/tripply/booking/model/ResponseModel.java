@@ -1,6 +1,7 @@
 package com.tripply.booking.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Builder
 public class ResponseModel<T> {
 
     private HttpStatus status;
@@ -23,5 +25,4 @@ public class ResponseModel<T> {
     private LocalDateTime timestamp;
     private T data;
     private List<ErrorDetails> errors;
-    
 }
