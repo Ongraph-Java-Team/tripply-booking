@@ -1,7 +1,6 @@
 package com.tripply.booking.service.Impl;
 
 import com.tripply.booking.Exception.BadRequestException;
-import com.tripply.booking.Exception.BookingExceptionHandler;
 import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.constants.enums.JobStatus;
 import com.tripply.booking.entity.*;
@@ -24,9 +23,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -137,21 +138,45 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public ResponseModel<RoomBookingResponse> bookRoom(UUID hotelId, RoomBookingRequest request) {
         log.info("RoomService: method -> bookRoom() with id: {} started", hotelId);
-        UserProfile user = userProfileRepository.findById(UUID.fromString(request.getUserId())).orElseThrow(() -> new DataNotFoundException("Specified user details not found in our system."));
-        List<Integer> availableRooms = roomRepository.findBySpecialFilters(String.valueOf(hotelId), request.getCategory(), request.getType(), request.getCheckInTime(), request.getCheckOutTime());
+        UserProfile user = userProfileRepository.findById(UUID.fromString(request.getUserId())).orElseThrow(() -> new DataNotFoundException("Specified user details not found in our system!"));
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new DataNotFoundException("Specified hotel details not found in our system!"));
+        List<Integer> availableRooms = roomRepository.findBySpecialFilters(hotelId, request.getCategory(), request.getType());
+
+        availableRooms.subList(request.getRoomCount(), availableRooms.size());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        LocalDateTime checkInTime = LocalDateTime.parse(request.getCheckInTime(), formatter);
+        LocalDateTime checkOutTime = LocalDateTime.parse(request.getCheckOutTime(), formatter);
+        List<List<Integer>> userBookedRooms = roomBookingRepository.findBookedRooms(hotelId, checkInTime, checkOutTime);
+        List<Integer> bookedRooms = userBookedRooms.stream().flatMap(List::stream).collect(Collectors.toList());
+        availableRooms.removeAll(bookedRooms);
         if(availableRooms.size() < request.getRoomCount())
             throw new BadRequestException("Not enough rooms!");
-        availableRooms.subList(request.getRoomCount(), availableRooms.size());
-
+        availableRooms.subList(request.getRoomCount(), availableRooms.size()).clear();
         RoomBooking roomBooking = new RoomBooking();
         roomBooking.setUser(user);
-        roomBooking.setRoomNumbers((Integer[]) availableRooms.toArray());
+        roomBooking.setHotelId(hotelId);
+        roomBooking.setRoomType(request.getType());
+        roomBooking.setRoomCategory(request.getCategory());
+        roomBooking.setTotalCharge(request.getTotalCharge());
+        roomBooking.setRoomNumbers(availableRooms);
         roomBooking.setCheckInTime(LocalDateTime.parse(request.getCheckInTime()));
         roomBooking.setCheckOutTime(LocalDateTime.parse(request.getCheckOutTime()));
         RoomBooking savedRoomBooking = roomBookingRepository.save(roomBooking);
         ResponseModel<RoomBookingResponse> responseModel = new ResponseModel<>();
         RoomBookingResponse response = new RoomBookingResponse();
-        response.setRoomCategory(savedRoomBooking.toString());
+        response.setBookingId(savedRoomBooking.getId());
+        response.setUserId(savedRoomBooking.getUser().getUserId());
+        response.setUserName(savedRoomBooking.getUser().getFullName());
+        response.setHotelId(savedRoomBooking.getHotelId());
+        response.setHotelName(hotel.getName());
+        response.setRoomNumbers(savedRoomBooking.getRoomNumbers());
+        response.setRoomCategory(savedRoomBooking.getRoomCategory());
+        response.setRoomType(savedRoomBooking.getRoomType());
+        response.setCheckInTime(savedRoomBooking.getCheckInTime());
+        response.setCheckOutTime(savedRoomBooking.getCheckOutTime());
+        response.setTotalRoomBooked(savedRoomBooking.getRoomNumbers().size());
+        response.setTotalCharge(savedRoomBooking.getTotalCharge());
+        response.setInvoiceDetails(null);
         responseModel.setData(response);
         responseModel.setStatus(HttpStatus.OK);
         responseModel.setMessage("Room is booked successfully");

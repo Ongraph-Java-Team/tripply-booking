@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -24,7 +25,14 @@ public class RoomBooking {
 
     private UUID hotelId;
 
-    private Integer[] roomNumbers;
+    String roomType;
+
+    String roomCategory;
+
+    Double totalCharge;
+
+    @Column(name = "room_numbers", columnDefinition = "jsonb")
+    private List<Integer> roomNumbers;
 
     @Column(name = "check_in_time")
     private LocalDateTime checkInTime;

@@ -4,24 +4,38 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomBookingResponse {
 
-    private Integer roomNumber;
+    private Long bookingId;
 
-    private Integer floor;
+    private UUID userId;
+
+    private String userName;
+
+    private UUID hotelId;
+
+    private String hotelName;
+
+    private List<Integer> roomNumbers;
 
     private String roomCategory;
 
-    private String type;
+    private String roomType;
 
-    private String howToReach;
+    private LocalDateTime checkInTime;
 
-    private Double roomPrice;
-
-    private Double totalCharge;
+    private LocalDateTime checkOutTime;
 
     private int totalRoomBooked;
+
+    private double totalCharge;
+
+    private Object invoiceDetails;
 }

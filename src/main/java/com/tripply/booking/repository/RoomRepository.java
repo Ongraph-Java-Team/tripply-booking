@@ -21,12 +21,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
 	@Query("SELECT r.roomNumber " +
 			"FROM Room r " +
-			"LEFT JOIN RoomBooking rb " +
-			"ON r.hotel.id = rb.hotelId AND r.roomNumber = rb.roomNumber " +
 			"WHERE r.hotel.id = :hotelId " +
 			"AND r.type = :type " +
-			"AND r.category = :category " +
-			"AND (rb.checkInTime IS NULL OR rb.checkOutTime IS NULL OR rb.checkOutTime <= :checkInTime OR rb.checkInTime >= :checkOutTime)")
-	List<Integer> findBySpecialFilters(String hotelId, String category, String type, String checkInTime, String checkOutTime);
-
+			"AND r.category = :category ")
+	List<Integer> findBySpecialFilters(UUID hotelId, String category, String type);
 }

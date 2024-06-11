@@ -22,4 +22,6 @@ public class RoomBookingRequest {
     private String type;
     @NotNull
     private int roomCount;
+    @NotNull
+    private Double totalCharge;
 }
