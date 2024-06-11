@@ -24,6 +24,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.hibernate5.SpringSessionContext;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -32,7 +35,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.tripply.booking.constants.BookingConstant.CHECK_USER_ALREADY_EXIST;
-import static com.tripply.booking.constants.BookingConstant.DUMMY_TOKEN;
 
 @Slf4j
 @Service
@@ -52,7 +54,9 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public ResponseModel<RatingResponse> addRating(RatingRequest ratingRequest) {
         log.info("Start RatingService addRating() for user with id: {}", ratingRequest.getUserId());
-        if(checkedUserAlreadyPresent(ratingRequest.getUserId())) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String token = (String) authentication.getCredentials();
+        if(checkedUserAlreadyPresent(ratingRequest.getUserId(), token)) {
             throw new DataNotFoundException("User not found with id: " + ratingRequest.getUserId());
         }
         Hotel hotel = hotelRepository.findById(ratingRequest.getHotelId()).orElseThrow(
@@ -120,12 +124,12 @@ public class RatingServiceImpl implements RatingService {
         return ratingResponse;
     }
 
-    private boolean checkedUserAlreadyPresent(UUID userId) {
+    private boolean checkedUserAlreadyPresent(UUID userId, String token) {
         log.info("Begin checkedUserAlreadyPresent() for the userId: {} ", userId);
         try {
             webClientService.getWithParameterizedTypeReference(authBaseUrl + CHECK_USER_ALREADY_EXIST + userId,
                     new ParameterizedTypeReference<>() {
-                    }, DUMMY_TOKEN);
+                    }, token);
             return true;
         } catch (Exception e) {
             log.error("Catching error for userId: {}", userId, e);

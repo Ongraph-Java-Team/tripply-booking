@@ -27,13 +27,13 @@ spring:
 app:
   base-url: http://localhost:8080
   notification:
-    base-url: http://localhost:8087
+    base-url: http://NOTIFICATION
   auth:
-    base-url: http://localhost:8082
+    base-url: http://AUTH
   booking:
-    base-url: http://localhost:8085
+    base-url: http://BOOKING
 
-swagger-url: http://localhost:8085/booking/swagger-ui/index.html
+swagger-url: http://BOOKING/booking/swagger-ui/index.html
 
 eureka:
   client:
