@@ -6,7 +6,6 @@ import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.Exception.ServiceCommunicationException;
 import com.tripply.booking.config.WebClientService;
 import com.tripply.booking.constants.enums.InvitationCategory;
-import com.tripply.booking.entity.BaseEntity;
 import com.tripply.booking.entity.Hotel;
 import com.tripply.booking.entity.HotelManager;
 import com.tripply.booking.entity.UserProfile;
@@ -20,7 +19,6 @@ import com.tripply.booking.repository.HotelManagerRepository;
 import com.tripply.booking.repository.HotelRepository;
 import com.tripply.booking.service.HotelService;
 import lombok.extern.slf4j.Slf4j;
-import org.json.simple.JSONObject;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +28,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -61,11 +61,13 @@ public class HotelServiceImpl implements HotelService {
     @Override
     public ResponseModel<InviteResponse> createHotel(HotelRequest hotelRequest) {
         log.info("Start HotelService createHotel(): {}", hotelRequest.getName());
-        if(checkedAlreadyInvited(hotelRequest.getManagerDetails().getEmail())) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String token = (String) authentication.getCredentials();
+        if(checkedAlreadyInvited(hotelRequest.getManagerDetails().getEmail(), token)) {
             throw new BadRequestException("Hotel manager already invited.");
         }
         InviteRequest inviteRequest = createHotelInviteRequest(hotelRequest);
-        ResponseModel<InviteResponse> response = sendHotelInvite(inviteRequest);
+        ResponseModel<InviteResponse> response = sendHotelInvite(inviteRequest, token);
         log.info("End HotelService createHotel(): {}", hotelRequest.getName());
         return response;
     }
@@ -130,14 +132,14 @@ public class HotelServiceImpl implements HotelService {
         return inviteRequest;
     }
 
-    private ResponseModel<InviteResponse> sendHotelInvite(InviteRequest inviteRequest) {
+    private ResponseModel<InviteResponse> sendHotelInvite(InviteRequest inviteRequest, String token) {
         log.info("Begin sendInvite() for the request: {} ", inviteRequest);
         try {
             return webClientService.postWithParameterizedTypeReference(notificationBaseUrl + SEND_HOTEL_INVITE_URL,
                     inviteRequest,
                     new ParameterizedTypeReference<>() {
                     },
-                    DUMMY_TOKEN);
+                    token);
         } catch (WebClientResponseException.BadRequest e) {
             log.error("Bad request error while sending hotel invite", e);
             throw new BadRequestException("User already registered or invite already sent");
@@ -150,12 +152,12 @@ public class HotelServiceImpl implements HotelService {
         }
     }
 
-    private boolean checkedAlreadyInvited(String sentToEmail) {
+    private boolean checkedAlreadyInvited(String sentToEmail, String token) {
         log.info("Begin checkedAlreadyInvitee() for the sentToEmail: {} ", sentToEmail);
         try {
             webClientService.getWithParameterizedTypeReference(notificationBaseUrl + CHECK_ALREADY_INVITED + sentToEmail,
                     new ParameterizedTypeReference<>() {
-                    }, DUMMY_TOKEN);
+                    }, token);
             return true;
         } catch (Exception e) {
             log.error("Catching error for emailID: {}", sentToEmail, e);
