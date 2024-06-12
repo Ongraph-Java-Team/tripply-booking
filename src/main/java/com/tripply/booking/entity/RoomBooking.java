@@ -25,11 +25,11 @@ public class RoomBooking {
 
     private UUID hotelId;
 
-    String roomType;
+    private String roomType;
 
-    String roomCategory;
+    private String roomCategory;
 
-    Double totalCharge;
+    private Double totalCharge;
 
     @Column(name = "room_numbers", columnDefinition = "jsonb")
     private List<Integer> roomNumbers;
