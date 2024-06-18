@@ -2,6 +2,8 @@ package com.tripply.booking.service.Impl;
 
 import com.tripply.booking.Exception.BadRequestException;
 import com.tripply.booking.Exception.DataNotFoundException;
+import com.tripply.booking.config.LoggedInUser;
+import com.tripply.booking.constants.enums.BookingStatus;
 import com.tripply.booking.constants.enums.JobStatus;
 import com.tripply.booking.entity.*;
 import com.tripply.booking.model.ResponseModel;
@@ -13,6 +15,7 @@ import com.tripply.booking.model.response.RoomResponse;
 import com.tripply.booking.repository.*;
 import com.tripply.booking.service.AsyncEventService;
 import com.tripply.booking.service.RoomService;
+import com.tripply.booking.util.DateTimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,8 +23,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -38,17 +43,20 @@ public class RoomServiceImpl implements RoomService {
     private final RoomBulkJobRepository roomBulkJobRepository;
     private final AmenityRepository amenityRepository;
     private final RoomRepository roomRepository;
-    private final UserProfileRepository userProfileRepository;
     private final RoomBookingRepository roomBookingRepository;
+    private final RoomBookingStageRepository roomBookingStageRepository;
+    private final LoggedInUser loggedInUser;
+    private final static long ROOM_ONBOARD_EXPIRATION = 10L;
 
-    public RoomServiceImpl(HotelRepository hotelRepository, AsyncEventService asyncEventService, RoomBulkJobRepository roomBulkJobRepository, AmenityRepository amenityRepository, RoomRepository roomRepository, UserProfileRepository userProfileRepository, RoomBookingRepository roomBookingRepository) {
+    public RoomServiceImpl(HotelRepository hotelRepository, AsyncEventService asyncEventService, RoomBulkJobRepository roomBulkJobRepository, AmenityRepository amenityRepository, RoomRepository roomRepository, RoomBookingRepository roomBookingRepository, RoomBookingStageRepository roomBookingStageRepository, LoggedInUser loggedInUser) {
         this.hotelRepository = hotelRepository;
         this.asyncEventService = asyncEventService;
         this.roomBulkJobRepository = roomBulkJobRepository;
         this.amenityRepository = amenityRepository;
         this.roomRepository = roomRepository;
-        this.userProfileRepository = userProfileRepository;
         this.roomBookingRepository = roomBookingRepository;
+        this.roomBookingStageRepository = roomBookingStageRepository;
+        this.loggedInUser = loggedInUser;
     }
 
     @Override
@@ -135,51 +143,66 @@ public class RoomServiceImpl implements RoomService {
         return responseModel;
     }
 
+    private List<Integer> getAvailableRooms(Hotel hotel, LocalDateTime checkInTime, LocalDateTime checkOutTime, String category, String type, Integer roomCount) {
+        List<Integer> matchedRooms = roomRepository.findBySpecialFilters(hotel.getId(), category, type);
+        matchedRooms.subList(roomCount, matchedRooms.size());
+        List<List<Integer>> userBookedRooms = roomBookingRepository.findBookedRooms(hotel.getId(), checkInTime, checkOutTime);
+        List<Integer> bookedRooms = userBookedRooms.stream().flatMap(List::stream).toList();
+        matchedRooms.removeAll(bookedRooms);
+        if(matchedRooms.size() < roomCount)
+            throw new BadRequestException("Not enough rooms! Please change the filters of room count");
+        matchedRooms.subList(roomCount, matchedRooms.size()).clear();
+        return matchedRooms;
+    }
+
     @Override
     public ResponseModel<RoomBookingResponse> bookRoom(UUID hotelId, RoomBookingRequest request) {
         log.info("RoomService: method -> bookRoom() with id: {} started", hotelId);
-        UserProfile user = userProfileRepository.findById(UUID.fromString(request.getUserId())).orElseThrow(() -> new DataNotFoundException("Specified user details not found in our system!"));
+        UUID userId = UUID.fromString(loggedInUser.getUserId());
         Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new DataNotFoundException("Specified hotel details not found in our system!"));
-        List<Integer> availableRooms = roomRepository.findBySpecialFilters(hotelId, request.getCategory(), request.getType());
+        List<Integer> availableRooms = getAvailableRooms(hotel, DateTimeUtil.parseDateTime(request.getCheckInTime()), DateTimeUtil.parseDateTime(request.getCheckOutTime()), request.getCategory(), request.getType(), request.getRoomCount());
 
-        availableRooms.subList(request.getRoomCount(), availableRooms.size());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        LocalDateTime checkInTime = LocalDateTime.parse(request.getCheckInTime(), formatter);
-        LocalDateTime checkOutTime = LocalDateTime.parse(request.getCheckOutTime(), formatter);
-        List<List<Integer>> userBookedRooms = roomBookingRepository.findBookedRooms(hotelId, checkInTime, checkOutTime);
-        List<Integer> bookedRooms = userBookedRooms.stream().flatMap(List::stream).collect(Collectors.toList());
-        availableRooms.removeAll(bookedRooms);
-        if(availableRooms.size() < request.getRoomCount())
-            throw new BadRequestException("Not enough rooms!");
-        availableRooms.subList(request.getRoomCount(), availableRooms.size()).clear();
         RoomBooking roomBooking = new RoomBooking();
-        roomBooking.setUser(user);
-        roomBooking.setHotelId(hotelId);
-        roomBooking.setRoomType(request.getType());
-        roomBooking.setRoomCategory(request.getCategory());
-        roomBooking.setTotalCharge(request.getTotalCharge());
-        roomBooking.setRoomNumbers(availableRooms);
-        roomBooking.setCheckInTime(LocalDateTime.parse(request.getCheckInTime()));
-        roomBooking.setCheckOutTime(LocalDateTime.parse(request.getCheckOutTime()));
         RoomBooking savedRoomBooking = roomBookingRepository.save(roomBooking);
+        RoomBookingStage roomBookingStage = new RoomBookingStage();
+        roomBookingStage.setActive(true);
+        roomBookingStage.setBookingId(savedRoomBooking.getId());
+        roomBookingStage.setBookingStatus(BookingStatus.PENDING);
+        RoomBookingStage savedRoomBookingStage = roomBookingStageRepository.save(roomBookingStage);
+
+        savedRoomBooking.setUserId(userId);
+        savedRoomBooking.setHotelId(hotelId);
+        savedRoomBooking.setRoomType(request.getType());
+        savedRoomBooking.setRoomCategory(request.getCategory());
+        savedRoomBooking.setTotalCharge(request.getTotalCharge());
+        savedRoomBooking.setRoomNumbers(availableRooms);
+        savedRoomBooking.setCheckInTime(LocalDateTime.parse(request.getCheckInTime()));
+        savedRoomBooking.setCheckOutTime(LocalDateTime.parse(request.getCheckOutTime()));
+        savedRoomBooking = roomBookingRepository.save(savedRoomBooking);
+        savedRoomBookingStage.setBookingStatus(BookingStatus.WAITING_FOR_PAYMENT);
+        savedRoomBookingStage = roomBookingStageRepository.save(savedRoomBookingStage);
+
         ResponseModel<RoomBookingResponse> responseModel = new ResponseModel<>();
-        RoomBookingResponse response = new RoomBookingResponse();
-        response.setBookingId(savedRoomBooking.getId());
-        response.setUserId(savedRoomBooking.getUser().getUserId());
-        response.setUserName(savedRoomBooking.getUser().getFullName());
-        response.setHotelId(savedRoomBooking.getHotelId());
-        response.setHotelName(hotel.getName());
-        response.setRoomNumbers(savedRoomBooking.getRoomNumbers());
-        response.setRoomCategory(savedRoomBooking.getRoomCategory());
-        response.setRoomType(savedRoomBooking.getRoomType());
-        response.setCheckInTime(savedRoomBooking.getCheckInTime());
-        response.setCheckOutTime(savedRoomBooking.getCheckOutTime());
-        response.setTotalRoomBooked(savedRoomBooking.getRoomNumbers().size());
-        response.setTotalCharge(savedRoomBooking.getTotalCharge());
-        response.setInvoiceDetails(null);
+        RoomBookingResponse response = RoomBookingResponse
+                .builder()
+                .bookingId(savedRoomBooking.getId())
+                .userId(userId)
+                .hotelId(hotelId)
+                .hotelName(hotel.getName())
+                .roomNumbers(savedRoomBooking.getRoomNumbers())
+                .roomCategory(savedRoomBooking.getRoomCategory())
+                .roomType(savedRoomBooking.getRoomType())
+                .checkInTime(savedRoomBooking.getCheckInTime())
+                .checkOutTime(savedRoomBooking.getCheckOutTime())
+                .totalRoomBooked(savedRoomBooking.getRoomNumbers().size())
+                .totalCharge(savedRoomBooking.getTotalCharge())
+                .bookingStatus(savedRoomBookingStage.getBookingStatus())
+                .bookingInitiatedTime(savedRoomBookingStage.getCreatedOn())
+                .invoiceDetails(null)
+                .build();
         responseModel.setData(response);
         responseModel.setStatus(HttpStatus.OK);
-        responseModel.setMessage("Room is booked successfully");
+        responseModel.setMessage("Room is booked successfully. Waiting for Payment");
         log.info("RoomService: method -> bookRoom() with id: {} ended", hotelId);
         return responseModel;
     }
@@ -205,6 +228,27 @@ public class RoomServiceImpl implements RoomService {
                 .description(room.getDescription())
                 .howToReach(room.getHowToReach())
                 .build();
+    }
+
+
+
+    @Scheduled(fixedRate = 300000)
+    public void cleanRoomBooking() {
+        log.info("> SERVICE -> Clean Room Booking executing... >>>");
+        List<RoomBookingStage> roomBookingStageList = roomBookingStageRepository.findAllByIsActive(true);
+
+        for(RoomBookingStage roomBookingStage : roomBookingStageList) {
+            if(LocalDateTime.now().isAfter(roomBookingStage.getCreatedOn().plusMinutes(ROOM_ONBOARD_EXPIRATION))) {
+                roomBookingRepository.deleteById(roomBookingStage.getBookingId());
+                log.info("Room Booking entry of id :{} is deleted successfully.", roomBookingStage.getBookingId());
+                roomBookingStage.setBookingStatus(BookingStatus.CANCELLED);
+                roomBookingStage.setActive(false);
+                roomBookingStageRepository.save(roomBookingStage);
+                log.info("Room Booking status is set to CANCELLED and active status is set to FALSE of id: {}", roomBookingStage.getId());
+            }
+        }
+
+        log.info("> SERVICE -> Clean Room Booking ended. >>>");
     }
 
 }

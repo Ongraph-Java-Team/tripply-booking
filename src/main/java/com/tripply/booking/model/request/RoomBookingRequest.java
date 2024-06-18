@@ -1,5 +1,6 @@
 package com.tripply.booking.model.request;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,19 +10,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomBookingRequest {
-
-    @NotNull
-    private String userId;
-    @NotNull
+    @NotNull(message = "It can't be null")
+    @NotBlank(message = "It can't be blank")
     private String checkInTime;
-    @NotNull
+    @NotNull(message = "It can't be null")
+    @NotBlank(message = "It can't be blank")
     private String checkOutTime;
-    @NotNull
+    @NotNull(message = "It can't be null")
+    @NotBlank(message = "It can't be blank")
     private String category;
-    @NotNull
+    @NotNull(message = "It can't be null")
+    @NotBlank(message = "It can't be blank")
     private String type;
-    @NotNull
+    @NotNull(message = "It can't be null")
     private int roomCount;
-    @NotNull
+    @NotNull(message = "It can't be null")
     private Double totalCharge;
 }

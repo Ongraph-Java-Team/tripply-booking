@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface RoomBookingRepository extends JpaRepository<RoomBooking, Long> {
+public interface RoomBookingRepository extends JpaRepository<RoomBooking, UUID> {
 
     @Query("SELECT rb.roomNumbers " +
             "FROM RoomBooking rb " +
