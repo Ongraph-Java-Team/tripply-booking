@@ -3,12 +3,15 @@ package com.tripply.booking.service.Impl;
 import com.tripply.booking.Exception.BadRequestException;
 import com.tripply.booking.Exception.DataNotFoundException;
 import com.tripply.booking.config.LoggedInUser;
+import com.tripply.booking.constants.BookingConstant;
 import com.tripply.booking.constants.enums.BookingStatus;
 import com.tripply.booking.constants.enums.JobStatus;
 import com.tripply.booking.entity.*;
 import com.tripply.booking.model.ResponseModel;
+import com.tripply.booking.model.RoomDTO;
 import com.tripply.booking.model.request.RoomBookingRequest;
 import com.tripply.booking.model.request.RoomRequest;
+import com.tripply.booking.model.response.RoomAvailableResponse;
 import com.tripply.booking.model.response.RoomBookingResponse;
 import com.tripply.booking.model.response.RoomBulkJobResponse;
 import com.tripply.booking.model.response.RoomResponse;
@@ -143,12 +146,12 @@ public class RoomServiceImpl implements RoomService {
         return responseModel;
     }
 
-    private List<Integer> getAvailableRooms(Hotel hotel, LocalDateTime checkInTime, LocalDateTime checkOutTime, String category, String type, Integer roomCount) {
-        List<Integer> matchedRooms = roomRepository.findBySpecialFilters(hotel.getId(), category, type);
+    private List<RoomDTO> getAvailableRooms(Hotel hotel, LocalDateTime checkInTime, LocalDateTime checkOutTime, String category, String type, Integer roomCount) {
+        List<RoomDTO> matchedRooms = roomRepository.findBySpecialFilters(hotel.getId(), category, type);
         matchedRooms.subList(roomCount, matchedRooms.size());
-        List<List<Integer>> userBookedRooms = roomBookingRepository.findBookedRooms(hotel.getId(), checkInTime, checkOutTime);
-        List<Integer> bookedRooms = userBookedRooms.stream().flatMap(List::stream).toList();
-        matchedRooms.removeAll(bookedRooms);
+        List<List<Long>> userBookedRooms = roomBookingRepository.findBookedRooms(hotel.getId(), checkInTime, checkOutTime);
+        List<Long> bookedRooms = userBookedRooms.stream().flatMap(List::stream).toList();
+        matchedRooms.removeIf(roomDTO -> bookedRooms.contains(roomDTO.getId()));
         if(matchedRooms.size() < roomCount)
             throw new BadRequestException("Not enough rooms! Please change the filters of room count");
         matchedRooms.subList(roomCount, matchedRooms.size()).clear();
@@ -160,7 +163,7 @@ public class RoomServiceImpl implements RoomService {
         log.info("RoomService: method -> bookRoom() with id: {} started", hotelId);
         UUID userId = UUID.fromString(loggedInUser.getUserId());
         Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new DataNotFoundException("Specified hotel details not found in our system!"));
-        List<Integer> availableRooms = getAvailableRooms(hotel, DateTimeUtil.parseDateTime(request.getCheckInTime()), DateTimeUtil.parseDateTime(request.getCheckOutTime()), request.getCategory(), request.getType(), request.getRoomCount());
+        List<RoomDTO> availableRooms = getAvailableRooms(hotel, DateTimeUtil.parseDateTime(request.getCheckInTime()), DateTimeUtil.parseDateTime(request.getCheckOutTime()), request.getCategory(), request.getType(), request.getRoomCount());
 
         RoomBooking roomBooking = new RoomBooking();
         RoomBooking savedRoomBooking = roomBookingRepository.save(roomBooking);
@@ -175,13 +178,13 @@ public class RoomServiceImpl implements RoomService {
         savedRoomBooking.setRoomType(request.getType());
         savedRoomBooking.setRoomCategory(request.getCategory());
         savedRoomBooking.setTotalCharge(request.getTotalCharge());
-        savedRoomBooking.setRoomNumbers(availableRooms);
+        savedRoomBooking.setRoomIds(availableRooms.stream().map(RoomDTO::getId).toList());
         savedRoomBooking.setCheckInTime(LocalDateTime.parse(request.getCheckInTime()));
         savedRoomBooking.setCheckOutTime(LocalDateTime.parse(request.getCheckOutTime()));
         savedRoomBooking = roomBookingRepository.save(savedRoomBooking);
         savedRoomBookingStage.setBookingStatus(BookingStatus.WAITING_FOR_PAYMENT);
         savedRoomBookingStage = roomBookingStageRepository.save(savedRoomBookingStage);
-
+        List<Integer> bookedRoomNumbers = roomRepository.findAllById(savedRoomBooking.getRoomIds()).stream().map(Room::getRoomNumber).toList();
         ResponseModel<RoomBookingResponse> responseModel = new ResponseModel<>();
         RoomBookingResponse response = RoomBookingResponse
                 .builder()
@@ -189,12 +192,12 @@ public class RoomServiceImpl implements RoomService {
                 .userId(userId)
                 .hotelId(hotelId)
                 .hotelName(hotel.getName())
-                .roomNumbers(savedRoomBooking.getRoomNumbers())
+                .roomNumbers(bookedRoomNumbers)
                 .roomCategory(savedRoomBooking.getRoomCategory())
                 .roomType(savedRoomBooking.getRoomType())
                 .checkInTime(savedRoomBooking.getCheckInTime())
                 .checkOutTime(savedRoomBooking.getCheckOutTime())
-                .totalRoomBooked(savedRoomBooking.getRoomNumbers().size())
+                .totalRoomBooked(bookedRoomNumbers.size())
                 .totalCharge(savedRoomBooking.getTotalCharge())
                 .bookingStatus(savedRoomBookingStage.getBookingStatus())
                 .bookingInitiatedTime(savedRoomBookingStage.getCreatedOn())
@@ -204,6 +207,37 @@ public class RoomServiceImpl implements RoomService {
         responseModel.setStatus(HttpStatus.OK);
         responseModel.setMessage("Room is booked successfully. Waiting for Payment");
         log.info("RoomService: method -> bookRoom() with id: {} ended", hotelId);
+        return responseModel;
+    }
+
+    @Override
+    public ResponseModel<RoomAvailableResponse> checkRoomAvailability(UUID hotelId, String checkInTime, String checkOutTime, String category, String roomType, int roomCount) {
+        log.info("RoomService: method -> checkRoomAvailability() with id: {} started", hotelId);
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new DataNotFoundException("Specified hotel details not found in our system!"));
+        List<RoomDTO> availableRooms = getAvailableRooms(hotel, DateTimeUtil.parseDateTime(checkInTime), DateTimeUtil.parseDateTime(checkOutTime), category, roomType, roomCount);
+        ResponseModel<RoomAvailableResponse> responseModel = new ResponseModel<>();
+        long night = DateTimeUtil.calculateNumberOfNights(DateTimeUtil.parseDateTime(checkInTime), DateTimeUtil.parseDateTime(checkOutTime));
+        double actualCharge = availableRooms.get(0).getPrice()*roomCount*night;
+        double totalCharge = (actualCharge - 100) - ((actualCharge - 100) * BookingConstant.DUMMY_BOOKING_DISCOUNT/100);
+        String description = availableRooms.get(0).getDescription();
+        RoomAvailableResponse response = RoomAvailableResponse
+                .builder()
+                .hotelId(hotel.getId())
+                .hotelName(hotel.getName())
+                .roomCategory(category)
+                .roomType(roomType)
+                .checkInTime(DateTimeUtil.parseDateTime(checkInTime))
+                .checkOutTime(DateTimeUtil.parseDateTime(checkOutTime))
+                .availableRooms(roomCount)
+                .nights(night)
+                .actualCharge(actualCharge)
+                .totalCharge(totalCharge)
+                .description(description)
+                .build();
+        responseModel.setData(response);
+        responseModel.setStatus(HttpStatus.OK);
+        responseModel.setMessage("Required rooms are available.");
+        log.info("RoomService: method -> checkRoomAvailability() with id: {} ended", hotelId);
         return responseModel;
     }
 

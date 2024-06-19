@@ -164,4 +164,17 @@ public class DateTimeUtil {
             throw new RuntimeException(e);
         }
     }
+
+    public static long calculateNumberOfNights(LocalDateTime checkInTime, LocalDateTime checkOutTime) {
+        // Calculate the duration between check-in and check-out times
+        long hoursBetween = ChronoUnit.HOURS.between(checkInTime, checkOutTime);
+        long daysBetween = ChronoUnit.DAYS.between(checkInTime.toLocalDate(), checkOutTime.toLocalDate());
+
+        // If checkOutTime is on the same day or after checkInTime, consider it as 1 night
+        if (hoursBetween < 24 && daysBetween == 0) {
+            return 1;
+        } else {
+            return daysBetween;
+        }
+    }
 }

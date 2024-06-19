@@ -12,11 +12,11 @@ import java.util.UUID;
 @Repository
 public interface RoomBookingRepository extends JpaRepository<RoomBooking, UUID> {
 
-    @Query("SELECT rb.roomNumbers " +
+    @Query("SELECT rb.roomIds " +
             "FROM RoomBooking rb " +
             "WHERE rb.hotelId = :hotelId " +
             "AND ((rb.checkInTime < :checkOutTime AND rb.checkOutTime > :checkInTime) " +
             "OR (rb.checkInTime >= :checkInTime AND rb.checkInTime < :checkOutTime) " +
             "OR (rb.checkOutTime > :checkInTime AND rb.checkOutTime <= :checkOutTime))")
-    List<List<Integer>> findBookedRooms(UUID hotelId, LocalDateTime checkInTime, LocalDateTime checkOutTime);
+    List<List<Long>> findBookedRooms(UUID hotelId, LocalDateTime checkInTime, LocalDateTime checkOutTime);
 }

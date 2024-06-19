@@ -29,8 +29,8 @@ public class RoomBooking extends BaseEntity{
     private Double totalCharge;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "room_numbers", columnDefinition = "jsonb")
-    private List<Integer> roomNumbers;
+    @Column(name = "room_ids", columnDefinition = "jsonb")
+    private List<Long> roomIds;
 
     @Column(name = "check_in_time")
     private LocalDateTime checkInTime;
