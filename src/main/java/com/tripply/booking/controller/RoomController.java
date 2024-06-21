@@ -8,6 +8,7 @@ import com.tripply.booking.model.response.RoomBookingResponse;
 import com.tripply.booking.model.response.RoomBulkJobResponse;
 import com.tripply.booking.model.response.RoomResponse;
 import com.tripply.booking.service.RoomService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -65,7 +66,7 @@ public class RoomController {
 	}
 
 	@PostMapping("{hotelId}/book")
-	public ResponseEntity<ResponseModel<RoomBookingResponse>> bookRoom(@PathVariable UUID hotelId, @RequestBody RoomBookingRequest request) {
+	public ResponseEntity<ResponseModel<RoomBookingResponse>> bookRoom(@PathVariable UUID hotelId, @RequestBody @Valid RoomBookingRequest request) {
 		log.info("RoomController: endpoint: /{hotelId}, method: bookRoom with id: {} started", hotelId);
 		ResponseModel<RoomBookingResponse> responses = roomService.bookRoom(hotelId, request);
 		log.info("RoomController: endpoint: /{hotelId}, method: bookRoom with id: {} ended", hotelId);

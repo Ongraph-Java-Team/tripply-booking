@@ -10,20 +10,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomBookingRequest {
-    @NotNull(message = "It can't be null")
-    @NotBlank(message = "It can't be blank")
+    @NotBlank(message = "CheckInTime can't be blank or null")
     private String checkInTime;
-    @NotNull(message = "It can't be null")
-    @NotBlank(message = "It can't be blank")
+    @NotBlank(message = "CheckOutTime can't be blank or null")
     private String checkOutTime;
-    @NotNull(message = "It can't be null")
-    @NotBlank(message = "It can't be blank")
+    @NotBlank(message = "Category can't be blank or null")
     private String category;
-    @NotNull(message = "It can't be null")
-    @NotBlank(message = "It can't be blank")
+    @NotBlank(message = "Type can't be blank or null")
     private String type;
-    @NotNull(message = "It can't be null")
+    @NotNull(message = "RoomCount can't be blank or null")
     private int roomCount;
-    @NotNull(message = "It can't be null")
+    @NotNull(message = "RoomCount can't be blank or null")
     private Double totalCharge;
 }

@@ -23,16 +23,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,7 +42,6 @@ public class RoomServiceImpl implements RoomService {
     private final RoomBookingRepository roomBookingRepository;
     private final RoomBookingStageRepository roomBookingStageRepository;
     private final LoggedInUser loggedInUser;
-    private final static long ROOM_ONBOARD_EXPIRATION = 10L;
 
     public RoomServiceImpl(HotelRepository hotelRepository, AsyncEventService asyncEventService, RoomBulkJobRepository roomBulkJobRepository, AmenityRepository amenityRepository, RoomRepository roomRepository, RoomBookingRepository roomBookingRepository, RoomBookingStageRepository roomBookingStageRepository, LoggedInUser loggedInUser) {
         this.hotelRepository = hotelRepository;
@@ -228,27 +223,6 @@ public class RoomServiceImpl implements RoomService {
                 .description(room.getDescription())
                 .howToReach(room.getHowToReach())
                 .build();
-    }
-
-
-
-    @Scheduled(fixedRate = 300000)
-    public void cleanRoomBooking() {
-        log.info("> SERVICE -> Clean Room Booking executing... >>>");
-        List<RoomBookingStage> roomBookingStageList = roomBookingStageRepository.findAllByIsActive(true);
-
-        for(RoomBookingStage roomBookingStage : roomBookingStageList) {
-            if(LocalDateTime.now().isAfter(roomBookingStage.getCreatedOn().plusMinutes(ROOM_ONBOARD_EXPIRATION))) {
-                roomBookingRepository.deleteById(roomBookingStage.getBookingId());
-                log.info("Room Booking entry of id :{} is deleted successfully.", roomBookingStage.getBookingId());
-                roomBookingStage.setBookingStatus(BookingStatus.CANCELLED);
-                roomBookingStage.setActive(false);
-                roomBookingStageRepository.save(roomBookingStage);
-                log.info("Room Booking status is set to CANCELLED and active status is set to FALSE of id: {}", roomBookingStage.getId());
-            }
-        }
-
-        log.info("> SERVICE -> Clean Room Booking ended. >>>");
     }
 
 }
