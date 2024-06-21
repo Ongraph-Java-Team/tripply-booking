@@ -12,6 +12,7 @@ public class BookingConstant {
     public static final String CHECK_USER_ALREADY_EXIST = "/auth/user/";
     public static final String FILE_TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     public static final String FILE_TYPE_CSV = "text/csv";
+    public static final long ROOM_ONBOARD_EXPIRATION = 10L;
     public static final Double DUMMY_BOOKING_DISCOUNT = 23.00;
 
 }
