@@ -20,6 +20,6 @@ public class RoomBookingRequest {
     private String type;
     @NotNull(message = "RoomCount can't be blank or null")
     private int roomCount;
-    @NotNull(message = "RoomCount can't be blank or null")
+    @NotNull(message = "TotalCharge can't be blank or null")
     private Double totalCharge;
 }
