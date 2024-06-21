@@ -36,7 +36,7 @@ public class BookingSchedulers {
             if(LocalDateTime.now().isAfter(roomBookingStage.getCreatedOn().plusMinutes(BookingConstant.ROOM_ONBOARD_EXPIRATION))) {
                 roomBookingRepository.deleteById(roomBookingStage.getBookingId());
                 log.info("Room Booking entry of id :{} is deleted successfully.", roomBookingStage.getBookingId());
-                roomBookingStage.setBookingStatus(BookingStatus.CANCELLED);
+                roomBookingStage.setBookingStatus(BookingStatus.EXPIRED);
                 roomBookingStage.setActive(false);
                 roomBookingStageRepository.save(roomBookingStage);
                 log.info("Room Booking status is set to CANCELLED and active status is set to FALSE of id: {}", roomBookingStage.getId());
