@@ -2,10 +2,13 @@ package com.tripply.booking.controller;
 
 import com.tripply.booking.entity.Room;
 import com.tripply.booking.model.ResponseModel;
+import com.tripply.booking.model.request.RoomBookingRequest;
 import com.tripply.booking.model.request.RoomRequest;
+import com.tripply.booking.model.response.RoomBookingResponse;
 import com.tripply.booking.model.response.RoomBulkJobResponse;
 import com.tripply.booking.model.response.RoomResponse;
 import com.tripply.booking.service.RoomService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -62,4 +65,11 @@ public class RoomController {
 		return ResponseEntity.ok(responses);
 	}
 
+	@PostMapping("{hotelId}/book")
+	public ResponseEntity<ResponseModel<RoomBookingResponse>> bookRoom(@PathVariable UUID hotelId, @RequestBody @Valid RoomBookingRequest request) {
+		log.info("RoomController: endpoint: /{hotelId}, method: bookRoom with id: {} started", hotelId);
+		ResponseModel<RoomBookingResponse> responses = roomService.bookRoom(hotelId, request);
+		log.info("RoomController: endpoint: /{hotelId}, method: bookRoom with id: {} ended", hotelId);
+		return ResponseEntity.ok(responses);
+	}
 }

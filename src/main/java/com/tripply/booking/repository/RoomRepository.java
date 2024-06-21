@@ -19,4 +19,10 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 	List<Integer> findRoomNumbersByHotelId(UUID hotelId);
 	Page<Room> findAll(Specification<RoomBulkJob> spec, Pageable pageable);
 
+	@Query("SELECT r.roomNumber " +
+			"FROM Room r " +
+			"WHERE r.hotel.id = :hotelId " +
+			"AND r.type = :type " +
+			"AND r.category = :category ")
+	List<Integer> findBySpecialFilters(UUID hotelId, String category, String type);
 }
