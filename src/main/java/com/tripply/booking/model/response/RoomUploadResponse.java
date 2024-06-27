@@ -4,19 +4,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
-
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RatingResponse {
-
-    private UUID id;
-    private UUID userId;
-    private UUID hotelId;
-    private Float rating;
-    private String comments;
+public class RoomUploadResponse {
+	private Integer roomNumber;
+    private Integer status;
+    private String message;
 
 }
