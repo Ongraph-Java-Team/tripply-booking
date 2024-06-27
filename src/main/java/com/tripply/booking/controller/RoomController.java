@@ -4,6 +4,7 @@ import com.tripply.booking.entity.Room;
 import com.tripply.booking.model.ResponseModel;
 import com.tripply.booking.model.request.RoomBookingRequest;
 import com.tripply.booking.model.request.RoomRequest;
+import com.tripply.booking.model.response.RoomAvailableResponse;
 import com.tripply.booking.model.response.RoomBookingResponse;
 import com.tripply.booking.model.response.RoomBulkJobResponse;
 import com.tripply.booking.model.response.RoomResponse;
@@ -67,9 +68,22 @@ public class RoomController {
 
 	@PostMapping("{hotelId}/book")
 	public ResponseEntity<ResponseModel<RoomBookingResponse>> bookRoom(@PathVariable UUID hotelId, @RequestBody @Valid RoomBookingRequest request) {
-		log.info("RoomController: endpoint: /{hotelId}, method: bookRoom with id: {} started", hotelId);
+		log.info("RoomController: endpoint: /{hotelId}/book, method: bookRoom with id: {} started", hotelId);
 		ResponseModel<RoomBookingResponse> responses = roomService.bookRoom(hotelId, request);
-		log.info("RoomController: endpoint: /{hotelId}, method: bookRoom with id: {} ended", hotelId);
+		log.info("RoomController: endpoint: /{hotelId}/book, method: bookRoom with id: {} ended", hotelId);
+		return ResponseEntity.ok(responses);
+	}
+
+	@GetMapping("{hotelId}/available-rooms")
+	public ResponseEntity<ResponseModel<RoomAvailableResponse>> checkRoomAvailability(@PathVariable UUID hotelId,
+																					  @RequestParam String checkInTime,
+																					  @RequestParam String checkOutTime,
+																					  @RequestParam String category,
+																					  @RequestParam String roomType,
+																					  @RequestParam int roomCount) {
+		log.info("RoomController: endpoint: /{hotelId}/available-rooms, method: bookRoom with id: {} started", hotelId);
+		ResponseModel<RoomAvailableResponse> responses = roomService.checkRoomAvailability(hotelId, checkInTime, checkOutTime, category, roomType, roomCount);
+		log.info("RoomController: endpoint: /{hotelId}/available-rooms, method: bookRoom with id: {} ended", hotelId);
 		return ResponseEntity.ok(responses);
 	}
 }

@@ -2,6 +2,7 @@ package com.tripply.booking.repository;
 
 import com.tripply.booking.entity.Room;
 import com.tripply.booking.entity.RoomBulkJob;
+import com.tripply.booking.model.RoomDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -19,10 +20,11 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 	List<Integer> findRoomNumbersByHotelId(UUID hotelId);
 	Page<Room> findAll(Specification<RoomBulkJob> spec, Pageable pageable);
 
-	@Query("SELECT r.roomNumber " +
+	@Query("SELECT new com.tripply.booking.model.RoomDTO(r.id, r.roomNumber, r.floor, r.category, r.type, r.price, r.description, r.hotel.id) " +
 			"FROM Room r " +
 			"WHERE r.hotel.id = :hotelId " +
 			"AND r.type = :type " +
-			"AND r.category = :category ")
-	List<Integer> findBySpecialFilters(UUID hotelId, String category, String type);
+			"AND r.category = :category")
+	List<RoomDTO> findBySpecialFilters(UUID hotelId, String category, String type);
+
 }
